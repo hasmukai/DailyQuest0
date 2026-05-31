@@ -23,6 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import com.example.dailyquest0.data.entity.Quest
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
 
@@ -191,9 +196,17 @@ fun QuestItem(
 @Composable
 fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) {
     var title by remember { mutableStateOf("") }
-    var epReward by remember { mutableStateOf("10") }
+    var epReward by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Daily") }
+    var epError by remember { mutableStateOf<String?>(null) }
+    var titleError by remember { mutableStateOf<String?>(null) }
     val types = listOf("Daily", "Weekly", "Temporary")
+    
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -202,13 +215,31 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Task Name") }
+                    onValueChange = { 
+                        title = it
+                        if (titleError != null) titleError = null
+                    },
+                    label = { Text("Task Name") },
+                    singleLine = true,
+                    isError = titleError != null,
+                    supportingText = titleError?.let { { Text(it) } },
+                    modifier = Modifier.focusRequester(focusRequester),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                 )
                 OutlinedTextField(
                     value = epReward,
-                    onValueChange = { epReward = it },
-                    label = { Text("EP Reward") }
+                    onValueChange = { 
+                        epReward = it
+                        if (epError != null) epError = null
+                    },
+                    label = { Text("EP Reward") },
+                    singleLine = true,
+                    isError = epError != null,
+                    supportingText = epError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    )
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -228,8 +259,19 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) 
         },
         confirmButton = {
             Button(onClick = {
-                val ep = epReward.toIntOrNull() ?: 10
-                if (title.isNotBlank()) {
+                var isValid = true
+                if (title.isBlank()) {
+                    titleError = "名前を入力してください"
+                    isValid = false
+                }
+                
+                val ep = epReward.toIntOrNull()
+                if (ep == null || ep <= 0) {
+                    epError = "正の整数を入力してください"
+                    isValid = false
+                }
+                
+                if (isValid && ep != null) {
                     onAdd(title, ep, selectedType)
                 }
             }) {
