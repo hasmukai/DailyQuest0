@@ -23,8 +23,8 @@ class AppRepository(private val appDao: AppDao) {
     // --- Quests ---
     fun getAllQuests(): Flow<List<Quest>> = appDao.getAllQuests()
 
-    suspend fun addQuest(title: String, epReward: Int) {
-        val quest = Quest(title = title, epReward = epReward)
+    suspend fun addQuest(title: String, epReward: Int, type: String = "Daily") {
+        val quest = Quest(title = title, epReward = epReward, type = type)
         appDao.insertQuest(quest)
     }
 

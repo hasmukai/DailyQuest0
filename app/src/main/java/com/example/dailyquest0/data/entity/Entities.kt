@@ -11,7 +11,8 @@ data class Quest(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val title: String,
-    val epReward: Int
+    val epReward: Int,
+    val type: String = "Daily" // "Daily", "Weekly", "Temporary"
 )
 
 @Entity(

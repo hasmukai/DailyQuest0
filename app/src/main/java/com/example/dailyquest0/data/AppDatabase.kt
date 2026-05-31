@@ -21,7 +21,7 @@ import com.example.dailyquest0.data.entity.WalletTransaction
         WalletTransaction::class,
         UserStats::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

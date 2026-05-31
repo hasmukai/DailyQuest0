@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class AppViewModel(private val repository: AppRepository) : ViewModel() {
 
@@ -34,9 +36,17 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
         }
     }
 
-    fun addQuest(title: String, epReward: Int) {
+    // Add selected filter state
+    private val _selectedFilter = MutableStateFlow("All")
+    val selectedFilter = _selectedFilter.asStateFlow()
+
+    fun setFilter(filter: String) {
+        _selectedFilter.value = filter
+    }
+
+    fun addQuest(title: String, epReward: Int, type: String) {
         viewModelScope.launch {
-            repository.addQuest(title, epReward)
+            repository.addQuest(title, epReward, type)
         }
     }
 

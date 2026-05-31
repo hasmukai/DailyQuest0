@@ -32,6 +32,7 @@ fun HomeScreen(viewModel: AppViewModel) {
     val quests by viewModel.quests.collectAsState()
     val todayLogs by viewModel.todayLogs.collectAsState()
     val userStats by viewModel.userStats.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -67,13 +68,34 @@ fun HomeScreen(viewModel: AppViewModel) {
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
-            if (quests.isEmpty()) {
+            val filterOptions = listOf("All", "Daily", "Weekly", "Temporary")
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            ) {
+                filterOptions.forEachIndexed { index, option ->
+                    SegmentedButton(
+                        selected = option == selectedFilter,
+                        onClick = { viewModel.setFilter(option) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = filterOptions.size)
+                    ) {
+                        Text(option)
+                    }
+                }
+            }
+
+            val filteredQuests = if (selectedFilter == "All") {
+                quests
+            } else {
+                quests.filter { it.type == selectedFilter }
+            }
+
+            if (filteredQuests.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No quests yet. Add one to get started!", color = Color.Gray)
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(quests) { quest ->
+                    items(filteredQuests) { quest ->
                         val isCompleted = todayLogs.any { it.questId == quest.id && it.isCompleted }
                         QuestItem(
                             quest = quest,
@@ -94,8 +116,8 @@ fun HomeScreen(viewModel: AppViewModel) {
     if (showAddDialog) {
         AddQuestDialog(
             onDismiss = { showAddDialog = false },
-            onAdd = { title, ep ->
-                viewModel.addQuest(title, ep)
+            onAdd = { title, ep, type ->
+                viewModel.addQuest(title, ep, type)
                 showAddDialog = false
             }
         )
@@ -144,11 +166,19 @@ fun QuestItem(
                     fontWeight = FontWeight.Bold,
                     color = if (isCompleted) Color.Gray else MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = "+${quest.epReward} EP",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "+${quest.epReward} EP",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(quest.type, fontSize = 10.sp) },
+                        modifier = Modifier.height(24.dp)
+                    )
+                }
             }
             
             IconButton(onClick = onDelete) {
@@ -159,9 +189,11 @@ fun QuestItem(
 }
 
 @Composable
-fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int) -> Unit) {
+fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) {
     var title by remember { mutableStateOf("") }
     var epReward by remember { mutableStateOf("10") }
+    var selectedType by remember { mutableStateOf("Daily") }
+    val types = listOf("Daily", "Weekly", "Temporary")
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -178,13 +210,27 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int) -> Unit) {
                     onValueChange = { epReward = it },
                     label = { Text("EP Reward") }
                 )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Quest Type", style = MaterialTheme.typography.labelMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    types.forEachIndexed { index, type ->
+                        SegmentedButton(
+                            selected = type == selectedType,
+                            onClick = { selectedType = type },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size)
+                        ) {
+                            Text(type, fontSize = 12.sp)
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(onClick = {
                 val ep = epReward.toIntOrNull() ?: 10
                 if (title.isNotBlank()) {
-                    onAdd(title, ep)
+                    onAdd(title, ep, selectedType)
                 }
             }) {
                 Text("Add")

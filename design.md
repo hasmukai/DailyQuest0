@@ -6,7 +6,8 @@ DailyQuestは、日々のルーティンやタスクをゲーム感覚でこな�
 
 ## 2. コア機能
 1. **Quest（タスク）の表示・管理**
-   - 毎日リセットされるデイリータスクを一覧表示
+   - クエストを3種類（Daily, Weekly, Temporary）に分類して管理
+   - クエスト一覧表示画面で、種類ごとにフィルタリング（All, Daily, Weekly, Temporary）が可能
    - Questの追加・編集・削除機能
    - 1タップで完了し、即座にEPを獲得できるスピード重視のUI
 2. **Wallet（ご褒美の管理）**
@@ -25,7 +26,7 @@ DailyQuestは、日々のルーティンやタスクをゲーム感覚でこな�
 - **ナビゲーション**: Navigation Compose
 
 ## 4. データベース設計 (Room Entities)
-- **Quest**: ユーザーが設定したタスクの定義（名前、獲得EP、アイコンなど）
+- **Quest**: ユーザーが設定したタスクの定義（名前、獲得EP、種類[Daily, Weekly, Temporary]、アイコンなど）
 - **DailyQuestLog**: 日付ごとのQuest完了記録
 - **UserStats**: 累計EPや現在保有EPを管理する単一レコードのテーブル
 - **Wallet**: 変換先の口座（名前、単位）
