@@ -39,8 +39,8 @@ interface AppDao {
     @Query("SELECT * FROM daily_quest_logs WHERE date >= :startDate")
     fun getLogsFrom(startDate: String): Flow<List<DailyQuestLog>>
 
-    @Query("SELECT daily_quest_logs.* FROM daily_quest_logs INNER JOIN quests ON daily_quest_logs.questId = quests.id WHERE quests.type = 'Temporary'")
-    fun getTemporaryQuestLogs(): Flow<List<DailyQuestLog>>
+    @Query("SELECT daily_quest_logs.* FROM daily_quest_logs INNER JOIN quests ON daily_quest_logs.questId = quests.id WHERE quests.type = :type")
+    fun getTemporaryQuestLogs(type: String): Flow<List<DailyQuestLog>>
 
     @Query("SELECT date, COUNT(id) as count FROM daily_quest_logs WHERE date >= :startDate GROUP BY date")
     fun getCompletionCountsFrom(startDate: String): Flow<List<com.example.dailyquest0.data.entity.DateCount>>

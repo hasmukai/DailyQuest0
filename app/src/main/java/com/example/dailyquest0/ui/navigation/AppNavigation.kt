@@ -1,6 +1,9 @@
 package com.example.dailyquest0.ui.navigation
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
@@ -11,47 +14,37 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import com.example.dailyquest0.ui.screens.HomeScreen
 import com.example.dailyquest0.ui.screens.StatsScreen
 import com.example.dailyquest0.ui.screens.WalletScreen
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppNavigation(viewModel: AppViewModel) {
-    val navController = rememberNavController()
-
     val items = listOf(
         Screen.Home,
         Screen.Wallet,
         Screen.Stats
     )
 
+    val pagerState = rememberPagerState(pageCount = { items.size })
+    val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
         bottomBar = {
             NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-
-                items.forEach { screen ->
+                items.forEachIndexed { index, screen ->
                     NavigationBarItem(
                         icon = { Icon(screen.icon, contentDescription = null) },
                         label = { Text(screen.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                        selected = pagerState.currentPage == index,
                         onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
                             }
                         }
                     )
@@ -59,15 +52,14 @@ fun AppNavigation(viewModel: AppViewModel) {
             }
         }
     ) { innerPadding ->
-        NavHost(navController, startDestination = Screen.Home.route, Modifier.padding(innerPadding)) {
-            composable(Screen.Home.route) {
-                HomeScreen(viewModel = viewModel)
-            }
-            composable(Screen.Wallet.route) {
-                WalletScreen(viewModel = viewModel)
-            }
-            composable(Screen.Stats.route) {
-                StatsScreen(viewModel = viewModel)
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.padding(innerPadding)
+        ) { page ->
+            when (page) {
+                0 -> HomeScreen(viewModel = viewModel)
+                1 -> WalletScreen(viewModel = viewModel)
+                2 -> StatsScreen(viewModel = viewModel)
             }
         }
     }
@@ -78,3 +70,4 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Wallet : Screen("wallet", "Wallet", Icons.Filled.ShoppingCart)
     object Stats : Screen("stats", "Stats", Icons.Filled.DateRange)
 }
+

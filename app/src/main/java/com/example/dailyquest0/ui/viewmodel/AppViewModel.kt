@@ -57,17 +57,17 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
             
             for (quest in questsList) {
                 when (quest.type) {
-                    "Daily" -> {
+                    com.example.dailyquest0.data.entity.QuestType.DAILY.displayName -> {
                         if (weekLogs.any { it.questId == quest.id && it.date == todayStr && it.isCompleted }) {
                             completedIds.add(quest.id)
                         }
                     }
-                    "Weekly" -> {
+                    com.example.dailyquest0.data.entity.QuestType.WEEKLY.displayName -> {
                         if (weekLogs.any { it.questId == quest.id && it.isCompleted }) {
                             completedIds.add(quest.id)
                         }
                     }
-                    "Temporary" -> {
+                    com.example.dailyquest0.data.entity.QuestType.TEMPORARY.displayName -> {
                         if (tempLogs.any { it.questId == quest.id && it.isCompleted }) {
                             completedIds.add(quest.id)
                         }
@@ -89,7 +89,7 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     }
 
     // Add selected filter state
-    private val _selectedFilter = MutableStateFlow("Daily")
+    private val _selectedFilter = MutableStateFlow(com.example.dailyquest0.data.entity.QuestType.DAILY.displayName)
     val selectedFilter = _selectedFilter.asStateFlow()
 
     fun setFilter(filter: String) {

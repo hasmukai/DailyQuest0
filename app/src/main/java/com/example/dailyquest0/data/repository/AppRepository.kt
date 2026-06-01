@@ -26,7 +26,7 @@ class AppRepository(private val appDao: AppDao) {
     // --- Quests ---
     fun getAllQuests(): Flow<List<Quest>> = appDao.getAllQuests()
 
-    suspend fun addQuest(title: String, epReward: Int, type: String = "Daily", iconName: String = "CheckCircle") {
+    suspend fun addQuest(title: String, epReward: Int, type: String = com.example.dailyquest0.data.entity.QuestType.DAILY.displayName, iconName: String = com.example.dailyquest0.data.entity.QuestIcon.CHECK_CIRCLE.iconName) {
         val quest = Quest(title = title, epReward = epReward, type = type, iconName = iconName)
         appDao.insertQuest(quest)
     }
@@ -51,7 +51,7 @@ class AppRepository(private val appDao: AppDao) {
     }
 
     fun getTemporaryQuestLogs(): Flow<List<DailyQuestLog>> {
-        return appDao.getTemporaryQuestLogs()
+        return appDao.getTemporaryQuestLogs(com.example.dailyquest0.data.entity.QuestType.TEMPORARY.displayName)
     }
 
     fun getActivityStats(startDate: LocalDate): Flow<Map<String, Int>> {
@@ -77,12 +77,12 @@ class AppRepository(private val appDao: AppDao) {
             appDao.insertDailyLog(log)
             appDao.addEp(quest.epReward)
         } else {
-            if (quest.type == "Daily") {
+            if (quest.type == com.example.dailyquest0.data.entity.QuestType.DAILY.displayName) {
                 appDao.deleteLogForQuestOnDate(quest.id, dateStr)
-            } else if (quest.type == "Weekly") {
+            } else if (quest.type == com.example.dailyquest0.data.entity.QuestType.WEEKLY.displayName) {
                 val weekStartStr = DateUtils.getLogicalWeekStart().format(dateFormatter)
                 appDao.deleteLogsForQuestBetween(quest.id, weekStartStr, dateStr)
-            } else if (quest.type == "Temporary") {
+            } else if (quest.type == com.example.dailyquest0.data.entity.QuestType.TEMPORARY.displayName) {
                 appDao.deleteAllLogsForQuest(quest.id)
             }
             appDao.spendEp(quest.epReward) // revert EP

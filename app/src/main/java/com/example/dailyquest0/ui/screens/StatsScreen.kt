@@ -181,7 +181,7 @@ fun StatsScreen(viewModel: AppViewModel) {
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            val icon = getQuestIcon(wallet.iconName, isFilled = true)
+                                            val icon = com.example.dailyquest0.data.entity.QuestIcon.fromIconName(wallet.iconName).filledIcon
                                             Icon(
                                                 imageVector = icon,
                                                 contentDescription = wallet.name,

@@ -25,8 +25,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import com.example.dailyquest0.data.entity.ExchangeRate
 import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
-import com.example.dailyquest0.ui.screens.iconsList
-import com.example.dailyquest0.ui.screens.getQuestIcon
+import com.example.dailyquest0.data.entity.QuestIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,16 +120,16 @@ fun WalletScreen(viewModel: AppViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(iconsList.size) { index ->
-                            val iconName = iconsList[index]
-                            val isSelected = selectedIcon == iconName
+                        items(QuestIcon.values().size) { index ->
+                            val iconItem = QuestIcon.values()[index]
+                            val isSelected = selectedIcon == iconItem.iconName
                             IconButton(
-                                onClick = { selectedIcon = iconName },
+                                onClick = { selectedIcon = iconItem.iconName },
                                 modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
                             ) {
                                 Icon(
-                                    imageVector = getQuestIcon(iconName, isFilled = isSelected),
-                                    contentDescription = iconName,
+                                    imageVector = if (isSelected) iconItem.filledIcon else iconItem.outlinedIcon,
+                                    contentDescription = iconItem.iconName,
                                     tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
                                 )
                             }
@@ -172,7 +171,7 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = getQuestIcon(wallet.iconName, isFilled = true),
+                    imageVector = QuestIcon.fromIconName(wallet.iconName).filledIcon,
                     contentDescription = wallet.iconName,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
