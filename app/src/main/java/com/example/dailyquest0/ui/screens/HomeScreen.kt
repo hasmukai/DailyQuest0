@@ -376,11 +376,16 @@ fun QuestItem(
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    SuggestionChip(
-                        onClick = {},
-                        label = { Text(quest.type, fontSize = 10.sp) },
-                        modifier = Modifier.height(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .height(24.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(quest.type, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
