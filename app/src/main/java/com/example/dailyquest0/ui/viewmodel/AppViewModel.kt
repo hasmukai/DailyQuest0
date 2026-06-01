@@ -50,6 +50,12 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
         }
     }
 
+    fun updateQuest(quest: Quest, title: String, epReward: Int, type: String) {
+        viewModelScope.launch {
+            repository.updateQuest(quest.copy(title = title, epReward = epReward, type = type))
+        }
+    }
+
     fun deleteQuest(questId: Long) {
         viewModelScope.launch {
             repository.deleteQuest(questId)

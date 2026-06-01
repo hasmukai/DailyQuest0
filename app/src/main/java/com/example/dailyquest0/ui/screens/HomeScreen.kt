@@ -5,6 +5,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,6 +42,8 @@ fun HomeScreen(viewModel: AppViewModel) {
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingQuest by remember { mutableStateOf<Quest?>(null) }
+    var questToDelete by remember { mutableStateOf<Quest?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -108,8 +112,8 @@ fun HomeScreen(viewModel: AppViewModel) {
                             onToggle = { completed ->
                                 viewModel.toggleQuest(quest, completed)
                             },
-                            onDelete = {
-                                viewModel.deleteQuest(quest.id)
+                            onLongClick = {
+                                editingQuest = quest
                             }
                         )
                     }
@@ -127,20 +131,61 @@ fun HomeScreen(viewModel: AppViewModel) {
             }
         )
     }
+
+    editingQuest?.let { quest ->
+        EditQuestDialog(
+            quest = quest,
+            onDismiss = { editingQuest = null },
+            onSave = { title, ep, type ->
+                viewModel.updateQuest(quest, title, ep, type)
+                editingQuest = null
+            },
+            onDeleteRequest = {
+                questToDelete = quest
+            }
+        )
+    }
+
+    questToDelete?.let { quest ->
+        AlertDialog(
+            onDismissRequest = { questToDelete = null },
+            title = { Text("クエストの削除") },
+            text = { Text("「${quest.title}」を削除してもよろしいですか？") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteQuest(quest.id)
+                        questToDelete = null
+                        editingQuest = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { questToDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun QuestItem(
     quest: Quest,
     isCompleted: Boolean,
     onToggle: (Boolean) -> Unit,
-    onDelete: () -> Unit
+    onLongClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .clickable { onToggle(!isCompleted) },
+            .combinedClickable(
+                onClick = { onToggle(!isCompleted) },
+                onLongClick = { onLongClick() }
+            ),
         colors = CardDefaults.cardColors(
             containerColor = if (isCompleted) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
         ),
@@ -184,10 +229,6 @@ fun QuestItem(
                         modifier = Modifier.height(24.dp)
                     )
                 }
-            }
-            
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete Quest", tint = Color.LightGray)
             }
         }
     }
@@ -280,6 +321,107 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) 
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun EditQuestDialog(
+    quest: Quest,
+    onDismiss: () -> Unit,
+    onSave: (String, Int, String) -> Unit,
+    onDeleteRequest: () -> Unit
+) {
+    var title by remember { mutableStateOf(quest.title) }
+    var epReward by remember { mutableStateOf(quest.epReward.toString()) }
+    var selectedType by remember { mutableStateOf(quest.type) }
+    var epError by remember { mutableStateOf<String?>(null) }
+    var titleError by remember { mutableStateOf<String?>(null) }
+    val types = listOf("Daily", "Weekly", "Temporary")
+    
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Quest") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { 
+                        title = it
+                        if (titleError != null) titleError = null
+                    },
+                    label = { Text("Task Name") },
+                    singleLine = true,
+                    isError = titleError != null,
+                    supportingText = titleError?.let { { Text(it) } },
+                    modifier = Modifier.focusRequester(focusRequester),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                )
+                OutlinedTextField(
+                    value = epReward,
+                    onValueChange = { 
+                        epReward = it
+                        if (epError != null) epError = null
+                    },
+                    label = { Text("EP Reward") },
+                    singleLine = true,
+                    isError = epError != null,
+                    supportingText = epError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Quest Type", style = MaterialTheme.typography.labelMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    types.forEachIndexed { index, type ->
+                        SegmentedButton(
+                            selected = type == selectedType,
+                            onClick = { selectedType = type },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size)
+                        ) {
+                            Text(type, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                var isValid = true
+                if (title.isBlank()) {
+                    titleError = "名前を入力してください"
+                    isValid = false
+                }
+                
+                val ep = epReward.toIntOrNull()
+                if (ep == null || ep <= 0) {
+                    epError = "正の整数を入力してください"
+                    isValid = false
+                }
+                
+                if (isValid && ep != null) {
+                    onSave(title, ep, selectedType)
+                }
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onDeleteRequest) { 
+                    Text("Delete", color = MaterialTheme.colorScheme.error) 
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
         }
     )
 }
