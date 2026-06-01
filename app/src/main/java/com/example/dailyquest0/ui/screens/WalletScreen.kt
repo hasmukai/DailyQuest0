@@ -167,7 +167,7 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                                 Button(
                                     onClick = { viewModel.exchangeEp(rate) },
                                     enabled = (userStats?.currentEp ?: 0) >= rate.requiredEp,
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).height(64.dp),
                                     contentPadding = PaddingValues(4.dp),
                                     shape = RoundedCornerShape(8.dp)
                                 ) {

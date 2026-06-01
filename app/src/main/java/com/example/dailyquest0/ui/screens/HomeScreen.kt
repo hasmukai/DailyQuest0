@@ -103,12 +103,6 @@ fun HomeScreen(viewModel: AppViewModel) {
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            Text(
-                text = "Today's Quests",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
 
             val filterOptions = listOf("All", "Daily", "Weekly", "Temporary")
             SingleChoiceSegmentedButtonRow(

@@ -62,7 +62,7 @@ interface AppDao {
     suspend fun insertWallet(wallet: Wallet): Long
 
     // --- ExchangeRate ---
-    @Query("SELECT * FROM exchange_rates WHERE walletId = :walletId")
+    @Query("SELECT * FROM exchange_rates WHERE walletId = :walletId ORDER BY requiredEp ASC")
     fun getExchangeRatesForWallet(walletId: Long): Flow<List<ExchangeRate>>
 
     @Insert
