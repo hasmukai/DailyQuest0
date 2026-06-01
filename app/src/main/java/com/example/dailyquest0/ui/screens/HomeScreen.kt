@@ -89,6 +89,7 @@ fun HomeScreen(viewModel: AppViewModel) {
     val completedQuestIds by viewModel.completedQuestIds.collectAsState()
     val userStats by viewModel.userStats.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val currentStreak by viewModel.currentStreak.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var editingQuest by remember { mutableStateOf<Quest?>(null) }
@@ -149,8 +150,25 @@ fun HomeScreen(viewModel: AppViewModel) {
                 }
             },
             topBar = {
-                TopAppBar(
-                    title = { Text("DailyQuest", fontWeight = FontWeight.Bold) },
+                CenterAlignedTopAppBar(
+                    navigationIcon = {
+                        Text(
+                            text = "DailyQuest", 
+                            fontWeight = FontWeight.Bold, 
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    },
+                    title = { 
+                        if (currentStreak >= 2) {
+                            Text(
+                                text = "$currentStreak-day streak! \uD83D\uDD25",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF5722) // Orange color for text
+                            )
+                        }
+                    },
                     actions = {
                         AssistChip(
                             onClick = { },
