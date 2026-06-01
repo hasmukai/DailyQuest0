@@ -12,7 +12,8 @@ data class Quest(
     val id: Long = 0,
     val title: String,
     val epReward: Int,
-    val type: String = "Daily" // "Daily", "Weekly", "Temporary"
+    val type: String = "Daily", // "Daily", "Weekly", "Temporary"
+    val iconName: String = "CheckCircle"
 )
 
 @Entity(
@@ -42,7 +43,8 @@ data class Wallet(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
-    val unit: String
+    val unit: String,
+    val iconName: String = "AttachMoney"
 )
 
 @Entity(

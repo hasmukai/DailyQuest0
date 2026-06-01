@@ -21,9 +21,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.lazy.LazyRow
 import com.example.dailyquest0.data.entity.ExchangeRate
 import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
+import com.example.dailyquest0.ui.screens.iconsList
+import com.example.dailyquest0.ui.screens.getQuestIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +77,7 @@ fun WalletScreen(viewModel: AppViewModel) {
     if (showAddWalletDialog) {
         var name by remember { mutableStateOf("") }
         var unit by remember { mutableStateOf("円") }
+        var selectedIcon by remember { mutableStateOf("AttachMoney") }
         var nameError by remember { mutableStateOf<String?>(null) }
         var unitError by remember { mutableStateOf<String?>(null) }
         val focusRequester = remember { FocusRequester() }
@@ -110,6 +114,28 @@ fun WalletScreen(viewModel: AppViewModel) {
                         supportingText = unitError?.let { { Text(it) } },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                     )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Icon", style = MaterialTheme.typography.labelMedium)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(iconsList.size) { index ->
+                            val iconName = iconsList[index]
+                            val isSelected = selectedIcon == iconName
+                            IconButton(
+                                onClick = { selectedIcon = iconName },
+                                modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = getQuestIcon(iconName, isFilled = isSelected),
+                                    contentDescription = iconName,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -118,7 +144,7 @@ fun WalletScreen(viewModel: AppViewModel) {
                     if (name.isBlank()) { nameError = "名前を入力してください"; isValid = false }
                     if (unit.isBlank()) { unitError = "単位を入力してください"; isValid = false }
                     if (isValid) {
-                        viewModel.addWallet(name, unit)
+                        viewModel.addWallet(name, unit, selectedIcon)
                         showAddWalletDialog = false
                     }
                 }) { Text("Create") }
@@ -144,8 +170,19 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(wallet.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("Balance: ${balance ?: 0} ${wallet.unit}", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = getQuestIcon(wallet.iconName, isFilled = true),
+                    contentDescription = wallet.iconName,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(wallet.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("Balance: ${balance ?: 0} ${wallet.unit}", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             

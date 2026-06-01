@@ -30,6 +30,46 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.LocalCafe
+import androidx.compose.material.icons.outlined.AttachMoney
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.SportsEsports
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.DirectionsRun
+import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.SportsSoccer
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.MonitorHeart
+import androidx.compose.material.icons.outlined.LocalHospital
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.dailyquest0.data.entity.Quest
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
 import com.example.dailyquest0.utils.DateUtils
@@ -192,8 +232,8 @@ fun HomeScreen(viewModel: AppViewModel) {
     if (showAddDialog) {
         AddQuestDialog(
             onDismiss = { showAddDialog = false },
-            onAdd = { title, ep, type ->
-                viewModel.addQuest(title, ep, type)
+            onAdd = { title, ep, type, iconName ->
+                viewModel.addQuest(title, ep, type, iconName)
                 showAddDialog = false
             }
         )
@@ -203,8 +243,8 @@ fun HomeScreen(viewModel: AppViewModel) {
         EditQuestDialog(
             quest = quest,
             onDismiss = { editingQuest = null },
-            onSave = { title, ep, type ->
-                viewModel.updateQuest(quest, title, ep, type)
+            onSave = { title, ep, type, iconName ->
+                viewModel.updateQuest(quest, title, ep, type, iconName)
                 editingQuest = null
             },
             onDeleteRequest = {
@@ -237,6 +277,13 @@ fun HomeScreen(viewModel: AppViewModel) {
     }
 }
 
+val iconsList = listOf(
+    "CheckCircle", "Restaurant", "LocalCafe", "AttachMoney", "Savings",
+    "SportsEsports", "MenuBook", "School", "Edit", "DirectionsRun",
+    "FitnessCenter", "SportsSoccer", "Flag", "EmojiEvents", "Schedule",
+    "Timer", "AutoStories", "Favorite", "MonitorHeart", "LocalHospital"
+)
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun QuestItem(
@@ -267,7 +314,7 @@ fun QuestItem(
             // Icon for 1-tap completion with animation
             IconButton(onClick = { onToggle(!isCompleted) }) {
                 Icon(
-                    imageVector = if (isCompleted) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                    imageVector = if (isCompleted) Icons.Filled.CheckCircle else getQuestIcon(quest.iconName, isFilled = false),
                     contentDescription = "Toggle Complete",
                     tint = if (isCompleted) MaterialTheme.colorScheme.primary else Color.Gray,
                     modifier = Modifier.size(32.dp)
@@ -302,13 +349,20 @@ fun QuestItem(
 }
 
 @Composable
-fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) {
+fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String, String) -> Unit) {
     var title by remember { mutableStateOf("") }
     var epReward by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Daily") }
+    var selectedIcon by remember { mutableStateOf("CheckCircle") }
     var epError by remember { mutableStateOf<String?>(null) }
     var titleError by remember { mutableStateOf<String?>(null) }
     val types = listOf("Daily", "Weekly", "Temporary")
+    val iconsList = listOf(
+        "CheckCircle", "Restaurant", "LocalCafe", "AttachMoney", "Savings",
+        "SportsEsports", "MenuBook", "School", "Edit", "DirectionsRun",
+        "FitnessCenter", "SportsSoccer", "Flag", "EmojiEvents", "Schedule",
+        "Timer", "AutoStories", "Favorite", "MonitorHeart", "LocalHospital"
+    )
     
     val focusRequester = remember { FocusRequester() }
 
@@ -363,6 +417,28 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) 
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Icon", style = MaterialTheme.typography.labelMedium)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(iconsList.size) { index ->
+                        val iconName = iconsList[index]
+                        val isSelected = selectedIcon == iconName
+                        IconButton(
+                            onClick = { selectedIcon = iconName },
+                            modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = getQuestIcon(iconName, isFilled = isSelected),
+                                contentDescription = iconName,
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -380,7 +456,7 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) 
                 }
                 
                 if (isValid && ep != null) {
-                    onAdd(title, ep, selectedType)
+                    onAdd(title, ep, selectedType, selectedIcon)
                 }
             }) {
                 Text("Add")
@@ -396,15 +472,22 @@ fun AddQuestDialog(onDismiss: () -> Unit, onAdd: (String, Int, String) -> Unit) 
 fun EditQuestDialog(
     quest: Quest,
     onDismiss: () -> Unit,
-    onSave: (String, Int, String) -> Unit,
+    onSave: (String, Int, String, String) -> Unit,
     onDeleteRequest: () -> Unit
 ) {
     var title by remember { mutableStateOf(quest.title) }
     var epReward by remember { mutableStateOf(quest.epReward.toString()) }
     var selectedType by remember { mutableStateOf(quest.type) }
+    var selectedIcon by remember { mutableStateOf(quest.iconName) }
     var epError by remember { mutableStateOf<String?>(null) }
     var titleError by remember { mutableStateOf<String?>(null) }
     val types = listOf("Daily", "Weekly", "Temporary")
+    val iconsList = listOf(
+        "CheckCircle", "Restaurant", "LocalCafe", "AttachMoney", "Savings",
+        "SportsEsports", "MenuBook", "School", "Edit", "DirectionsRun",
+        "FitnessCenter", "SportsSoccer", "Flag", "EmojiEvents", "Schedule",
+        "Timer", "AutoStories", "Favorite", "MonitorHeart", "LocalHospital"
+    )
     
     val focusRequester = remember { FocusRequester() }
 
@@ -459,6 +542,28 @@ fun EditQuestDialog(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Icon", style = MaterialTheme.typography.labelMedium)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(iconsList.size) { index ->
+                        val iconName = iconsList[index]
+                        val isSelected = selectedIcon == iconName
+                        IconButton(
+                            onClick = { selectedIcon = iconName },
+                            modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = getQuestIcon(iconName, isFilled = isSelected),
+                                contentDescription = iconName,
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -476,7 +581,7 @@ fun EditQuestDialog(
                 }
                 
                 if (isValid && ep != null) {
-                    onSave(title, ep, selectedType)
+                    onSave(title, ep, selectedType, selectedIcon)
                 }
             }) {
                 Text("Save")
@@ -491,4 +596,29 @@ fun EditQuestDialog(
             }
         }
     )
+}
+
+fun getQuestIcon(name: String, isFilled: Boolean): ImageVector {
+    return when(name) {
+        "Restaurant" -> if (isFilled) Icons.Filled.Restaurant else Icons.Outlined.Restaurant
+        "LocalCafe" -> if (isFilled) Icons.Filled.LocalCafe else Icons.Outlined.LocalCafe
+        "AttachMoney" -> if (isFilled) Icons.Filled.AttachMoney else Icons.Outlined.AttachMoney
+        "Savings" -> if (isFilled) Icons.Filled.Savings else Icons.Outlined.Savings
+        "SportsEsports" -> if (isFilled) Icons.Filled.SportsEsports else Icons.Outlined.SportsEsports
+        "MenuBook" -> if (isFilled) Icons.Filled.MenuBook else Icons.Outlined.MenuBook
+        "School" -> if (isFilled) Icons.Filled.School else Icons.Outlined.School
+        "Edit" -> if (isFilled) Icons.Filled.Edit else Icons.Outlined.Edit
+        "DirectionsRun" -> if (isFilled) Icons.Filled.DirectionsRun else Icons.Outlined.DirectionsRun
+        "FitnessCenter" -> if (isFilled) Icons.Filled.FitnessCenter else Icons.Outlined.FitnessCenter
+        "SportsSoccer" -> if (isFilled) Icons.Filled.SportsSoccer else Icons.Outlined.SportsSoccer
+        "Flag" -> if (isFilled) Icons.Filled.Flag else Icons.Outlined.Flag
+        "EmojiEvents" -> if (isFilled) Icons.Filled.EmojiEvents else Icons.Outlined.EmojiEvents
+        "Schedule" -> if (isFilled) Icons.Filled.Schedule else Icons.Outlined.Schedule
+        "Timer" -> if (isFilled) Icons.Filled.Timer else Icons.Outlined.Timer
+        "AutoStories" -> if (isFilled) Icons.Filled.AutoStories else Icons.Outlined.AutoStories
+        "Favorite" -> if (isFilled) Icons.Filled.Favorite else Icons.Outlined.Favorite
+        "MonitorHeart" -> if (isFilled) Icons.Filled.MonitorHeart else Icons.Outlined.MonitorHeart
+        "LocalHospital" -> if (isFilled) Icons.Filled.LocalHospital else Icons.Outlined.LocalHospital
+        else -> if (isFilled) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle
+    }
 }

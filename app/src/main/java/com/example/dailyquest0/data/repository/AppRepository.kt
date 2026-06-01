@@ -25,8 +25,8 @@ class AppRepository(private val appDao: AppDao) {
     // --- Quests ---
     fun getAllQuests(): Flow<List<Quest>> = appDao.getAllQuests()
 
-    suspend fun addQuest(title: String, epReward: Int, type: String = "Daily") {
-        val quest = Quest(title = title, epReward = epReward, type = type)
+    suspend fun addQuest(title: String, epReward: Int, type: String = "Daily", iconName: String = "CheckCircle") {
+        val quest = Quest(title = title, epReward = epReward, type = type, iconName = iconName)
         appDao.insertQuest(quest)
     }
 
@@ -81,8 +81,8 @@ class AppRepository(private val appDao: AppDao) {
     // --- Wallet & Shop ---
     fun getAllWallets(): Flow<List<Wallet>> = appDao.getAllWallets()
 
-    suspend fun createWallet(name: String, unit: String) {
-        appDao.insertWallet(Wallet(name = name, unit = unit))
+    suspend fun createWallet(name: String, unit: String, iconName: String = "AttachMoney") {
+        appDao.insertWallet(Wallet(name = name, unit = unit, iconName = iconName))
     }
 
     fun getExchangeRatesForWallet(walletId: Long): Flow<List<ExchangeRate>> {

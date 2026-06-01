@@ -90,15 +90,15 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
         _selectedFilter.value = filter
     }
 
-    fun addQuest(title: String, epReward: Int, type: String) {
+    fun addQuest(title: String, epReward: Int, type: String, iconName: String) {
         viewModelScope.launch {
-            repository.addQuest(title, epReward, type)
+            repository.addQuest(title, epReward, type, iconName)
         }
     }
 
-    fun updateQuest(quest: Quest, title: String, epReward: Int, type: String) {
+    fun updateQuest(quest: Quest, title: String, epReward: Int, type: String, iconName: String) {
         viewModelScope.launch {
-            repository.updateQuest(quest.copy(title = title, epReward = epReward, type = type))
+            repository.updateQuest(quest.copy(title = title, epReward = epReward, type = type, iconName = iconName))
         }
     }
 
@@ -115,9 +115,9 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     }
 
     // --- Wallet & Exchange ---
-    fun addWallet(name: String, unit: String) {
+    fun addWallet(name: String, unit: String, iconName: String) {
         viewModelScope.launch {
-            repository.createWallet(name, unit)
+            repository.createWallet(name, unit, iconName)
         }
     }
 
