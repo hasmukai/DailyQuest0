@@ -97,14 +97,18 @@ fun HomeScreen(viewModel: AppViewModel) {
             } else {
                 quests.filter { it.type == selectedFilter }
             }
+            
+            val sortedQuests = filteredQuests.sortedBy { quest ->
+                todayLogs.any { it.questId == quest.id && it.isCompleted }
+            }
 
-            if (filteredQuests.isEmpty()) {
+            if (sortedQuests.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No quests yet. Add one to get started!", color = Color.Gray)
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(filteredQuests) { quest ->
+                    items(sortedQuests) { quest ->
                         val isCompleted = todayLogs.any { it.questId == quest.id && it.isCompleted }
                         QuestItem(
                             quest = quest,
