@@ -11,12 +11,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.delay
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentHashMap
 import com.example.dailyquest0.utils.DateUtils
 
 class AppViewModel(private val repository: AppRepository) : ViewModel() {
@@ -127,8 +129,21 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
         }
     }
 
-    fun getWalletBalance(walletId: Long) = repository.getWalletBalance(walletId)
-    fun getTransactions(walletId: Long) = repository.getTransactionsForWallet(walletId)
+    private val walletBalanceFlows = ConcurrentHashMap<Long, StateFlow<Int?>>()
+    fun getWalletBalance(walletId: Long): StateFlow<Int?> {
+        return walletBalanceFlows.getOrPut(walletId) {
+            repository.getWalletBalance(walletId)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        }
+    }
+
+    private val exchangeRatesFlows = ConcurrentHashMap<Long, StateFlow<List<com.example.dailyquest0.data.entity.ExchangeRate>>>()
+    fun getExchangeRates(walletId: Long): StateFlow<List<com.example.dailyquest0.data.entity.ExchangeRate>> {
+        return exchangeRatesFlows.getOrPut(walletId) {
+            repository.getExchangeRatesForWallet(walletId)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }
+    }
     
     fun consumeFromWallet(walletId: Long, amount: Int, memo: String) {
         viewModelScope.launch {
@@ -136,7 +151,7 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
         }
     }
     
-    fun getExchangeRates(walletId: Long) = repository.getExchangeRatesForWallet(walletId)
+    fun getTransactions(walletId: Long) = repository.getTransactionsForWallet(walletId)
     
     fun addExchangeRate(walletId: Long, requiredEp: Int, rewardedAmount: Int) {
         viewModelScope.launch {

@@ -80,8 +80,8 @@ fun StatsScreen(viewModel: AppViewModel) {
             Spacer(modifier = Modifier.height(8.dp))
             
             // Contribution Graph
-            val startDate = logicalDate.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY)).minusWeeks(9)
-            val days = (0..69).map { startDate.plusDays(it.toLong()) }
+            val startDate = remember(logicalDate) { logicalDate.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY)).minusWeeks(9) }
+            val days = remember(startDate) { (0..69).map { startDate.plusDays(it.toLong()) } }
             
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val labelWidth = 24.dp
@@ -173,7 +173,7 @@ fun StatsScreen(viewModel: AppViewModel) {
                             items(walletsWithTransactions.size) { index ->
                                 val walletWithTx = walletsWithTransactions[index]
                                 val wallet = walletWithTx.wallet
-                                val txs = walletWithTx.transactions.sortedByDescending { it.createdAt }
+                                val txs = remember(walletWithTx.transactions) { walletWithTx.transactions.sortedByDescending { it.createdAt } }
                                 
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -191,7 +191,7 @@ fun StatsScreen(viewModel: AppViewModel) {
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(wallet.name, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                             Spacer(modifier = Modifier.weight(1f))
-                                            val balance = txs.sumOf { it.amount }
+                                            val balance = remember(txs) { txs.sumOf { it.amount } }
                                             val balanceSign = if (balance > 0) "+" else ""
                                             Text("$balanceSign$balance ${wallet.unit}", fontWeight = FontWeight.Bold, color = if (balance > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
                                         }

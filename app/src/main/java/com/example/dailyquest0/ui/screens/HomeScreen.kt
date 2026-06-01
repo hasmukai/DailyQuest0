@@ -161,10 +161,12 @@ fun HomeScreen(viewModel: AppViewModel) {
                 }
             }
 
-            val filteredQuests = if (selectedFilter == "All") {
-                quests
-            } else {
-                quests.filter { it.type == selectedFilter }
+            val filteredQuests = remember(selectedFilter, quests) {
+                if (selectedFilter == "All") {
+                    quests
+                } else {
+                    quests.filter { it.type == selectedFilter }
+                }
             }
 
             if (selectedFilter == QuestType.DAILY.displayName || selectedFilter == QuestType.WEEKLY.displayName) {
@@ -203,8 +205,10 @@ fun HomeScreen(viewModel: AppViewModel) {
                 )
             }
             
-            val sortedQuests = filteredQuests.sortedBy { quest ->
-                completedQuestIds.contains(quest.id)
+            val sortedQuests = remember(filteredQuests, completedQuestIds) {
+                filteredQuests.sortedBy { quest ->
+                    completedQuestIds.contains(quest.id)
+                }
             }
 
             if (sortedQuests.isEmpty()) {
