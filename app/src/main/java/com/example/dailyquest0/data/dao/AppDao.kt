@@ -82,7 +82,7 @@ interface AppDao {
     @Query("SELECT * FROM user_stats WHERE id = 1")
     fun getUserStats(): Flow<UserStats?>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertUserStats(stats: UserStats): Long
     
     @Query("UPDATE user_stats SET currentEp = currentEp + :ep, totalEp = totalEp + :ep WHERE id = 1")
