@@ -217,11 +217,12 @@ fun HomeScreen(viewModel: AppViewModel) {
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(sortedQuests) { quest ->
+                    items(items = sortedQuests, key = { it.id }) { quest ->
                         val isCompleted = completedQuestIds.contains(quest.id)
                         QuestItem(
                             quest = quest,
                             isCompleted = isCompleted,
+                            modifier = Modifier.animateItem(),
                             onToggle = { completed ->
                                 viewModel.toggleQuest(quest, completed)
                             },
@@ -290,11 +291,12 @@ fun HomeScreen(viewModel: AppViewModel) {
 fun QuestItem(
     quest: Quest,
     isCompleted: Boolean,
+    modifier: Modifier = Modifier,
     onToggle: (Boolean) -> Unit,
     onLongClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .combinedClickable(
