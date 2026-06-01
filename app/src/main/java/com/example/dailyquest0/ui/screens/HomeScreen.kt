@@ -125,6 +125,39 @@ fun HomeScreen(viewModel: AppViewModel) {
                 }
             }
 
+            val filteredQuests = if (selectedFilter == "All") {
+                quests
+            } else {
+                quests.filter { it.type == selectedFilter }
+            }
+
+            if (selectedFilter == "Daily" || selectedFilter == "Weekly") {
+                val totalQuests = filteredQuests.size
+                val completedCount = filteredQuests.count { completedQuestIds.contains(it.id) }
+                val progress = if (totalQuests > 0) completedCount.toFloat() / totalQuests.toFloat() else 0f
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "達成度: $completedCount / $totalQuests",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
+            }
+
             if (timeRemaining.isNotEmpty()) {
                 Text(
                     text = "リセットまで: $timeRemaining",
@@ -132,12 +165,6 @@ fun HomeScreen(viewModel: AppViewModel) {
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.align(Alignment.End).padding(bottom = 8.dp)
                 )
-            }
-
-            val filteredQuests = if (selectedFilter == "All") {
-                quests
-            } else {
-                quests.filter { it.type == selectedFilter }
             }
             
             val sortedQuests = filteredQuests.sortedBy { quest ->
