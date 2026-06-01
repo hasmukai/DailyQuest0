@@ -10,6 +10,7 @@ import com.example.dailyquest0.data.entity.UserStats
 import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.data.entity.WalletTransaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -51,6 +52,12 @@ class AppRepository(private val appDao: AppDao) {
 
     fun getTemporaryQuestLogs(): Flow<List<DailyQuestLog>> {
         return appDao.getTemporaryQuestLogs()
+    }
+
+    fun getActivityStats(startDate: LocalDate): Flow<Map<String, Int>> {
+        return appDao.getCompletionCountsFrom(startDate.format(dateFormatter)).map { list ->
+            list.associate { it.date to it.count }
+        }
     }
 
     suspend fun toggleQuestCompletion(quest: Quest, isCompleted: Boolean) {

@@ -16,12 +16,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
-import java.time.LocalDate
+import com.example.dailyquest0.utils.DateUtils
+import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.border
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(viewModel: AppViewModel) {
     val userStats by viewModel.userStats.collectAsState()
+    val activityStats by viewModel.activityStats.collectAsState()
+    
+    val logicalDate = DateUtils.getLogicalDate()
+    val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     
     // For MVP, we will fake a simple 30-day contribution graph
     // A full Github-style graph requires tracking dates rigorously and displaying them in a 7xN grid.
@@ -51,41 +57,89 @@ fun StatsScreen(viewModel: AppViewModel) {
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            Text("Activity (Last 30 Days)", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Activity (Last 10 Weeks)", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Contribution Graph (Simplified MVP)
-            // Ideally we fetch daily quest logs, group by date, and map them to a grid.
-            // Since we need to wait for the repository to support complex date range queries,
-            // we will render a placeholder grid for the UI demo.
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Generate 35 blocks
-                items(35) { index ->
-                    // For demo, just make some random cells darker
-                    val intensity = (index * 7 % 5) // fake intensity 0-4
-                    val color = when (intensity) {
-                        0 -> Color.LightGray.copy(alpha = 0.3f)
-                        1 -> Color(0xFF9BE9A8)
-                        2 -> Color(0xFF40C463)
-                        3 -> Color(0xFF30A14E)
-                        else -> Color(0xFF216E39)
+            // Contribution Graph
+            val startDate = logicalDate.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY)).minusWeeks(9)
+            val days = (0..69).map { startDate.plusDays(it.toLong()) }
+            
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val labelWidth = 24.dp
+                val spacing = 4.dp
+                val availableForWeeks = maxWidth - labelWidth - (spacing * 10)
+                val boxSize = availableForWeeks / 10
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(spacing)
+                ) {
+                    // Day of Week Labels
+                    Column {
+                        Spacer(modifier = Modifier.height(14.dp)) // Matches date text height
+                        Spacer(modifier = Modifier.height(spacing))
+                        Column(
+                            modifier = Modifier
+                                .width(labelWidth)
+                                .height(boxSize * 7 + spacing * 6)
+                                .padding(end = 4.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                        Text("Sun", fontSize = 10.sp, color = Color.Gray)
+                        Text("Sat", fontSize = 10.sp, color = Color.Gray)
                     }
-                    Box(
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(color)
-                    )
                 }
+                                val weeks = days.chunked(7)
+                    for (week in weeks) {
+                        Column(
+                            modifier = Modifier.width(boxSize),
+                            verticalArrangement = Arrangement.spacedBy(spacing)
+                        ) {
+                        val firstDay = week.first()
+                        Text(
+                            text = "${firstDay.monthValue}/${firstDay.dayOfMonth}",
+                            fontSize = 8.sp,
+                            color = Color.Gray,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.align(Alignment.CenterHorizontally).height(14.dp)
+                        )
+                                                Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                            for (date in week) {
+                            val dateStr = date.format(dateFormatter)
+                            val count = activityStats[dateStr] ?: 0
+                            
+                            val color = when {
+                                count == 0 -> Color.LightGray.copy(alpha = 0.3f)
+                                count == 1 -> Color(0xFF9BE9A8)
+                                count == 2 -> Color(0xFF40C463)
+                                count == 3 -> Color(0xFF30A14E)
+                                else -> Color(0xFF216E39)
+                            }
+                            
+                            val isToday = date == logicalDate
+                                val boxModifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(boxSize)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(color)
+                                
+                            Box(
+                                modifier = if (isToday) {
+                                    boxModifier.then(Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
+                                } else {
+                                    boxModifier
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            }
             }
             
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Note: Graph currently shows demo data. Connect to real DailyQuestLog table for full MVP.", fontSize = 12.sp, color = Color.Gray)
+            Text("Each block represents a day. Darker green means more quests completed.", fontSize = 12.sp, color = Color.Gray)
         }
     }
 }

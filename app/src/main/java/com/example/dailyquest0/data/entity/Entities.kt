@@ -93,3 +93,8 @@ data class UserStats(
     val totalEp: Int = 0,
     val currentEp: Int = 0
 )
+
+data class DateCount(
+    val date: String,
+    val count: Int
+)
