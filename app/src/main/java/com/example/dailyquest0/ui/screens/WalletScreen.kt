@@ -16,6 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import com.example.dailyquest0.data.entity.ExchangeRate
 import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
@@ -69,6 +74,11 @@ fun WalletScreen(viewModel: AppViewModel) {
     if (showAddWalletDialog) {
         var name by remember { mutableStateOf("") }
         var unit by remember { mutableStateOf("円") }
+        var nameError by remember { mutableStateOf<String?>(null) }
+        var unitError by remember { mutableStateOf<String?>(null) }
+        val focusRequester = remember { FocusRequester() }
+
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
         AlertDialog(
             onDismissRequest = { showAddWalletDialog = false },
@@ -77,19 +87,37 @@ fun WalletScreen(viewModel: AppViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Wallet Name (e.g. お小遣い)") }
+                        onValueChange = { 
+                            name = it
+                            if (nameError != null) nameError = null
+                        },
+                        label = { Text("Wallet Name (e.g. お小遣い)") },
+                        singleLine = true,
+                        isError = nameError != null,
+                        supportingText = nameError?.let { { Text(it) } },
+                        modifier = Modifier.focusRequester(focusRequester),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                     )
                     OutlinedTextField(
                         value = unit,
-                        onValueChange = { unit = it },
-                        label = { Text("Unit (e.g. 円, 分)") }
+                        onValueChange = { 
+                            unit = it
+                            if (unitError != null) unitError = null
+                        },
+                        label = { Text("Unit (e.g. 円, 分)") },
+                        singleLine = true,
+                        isError = unitError != null,
+                        supportingText = unitError?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                     )
                 }
             },
             confirmButton = {
                 Button(onClick = {
-                    if (name.isNotBlank() && unit.isNotBlank()) {
+                    var isValid = true
+                    if (name.isBlank()) { nameError = "名前を入力してください"; isValid = false }
+                    if (unit.isBlank()) { unitError = "単位を入力してください"; isValid = false }
+                    if (isValid) {
                         viewModel.addWallet(name, unit)
                         showAddWalletDialog = false
                     }
@@ -125,33 +153,57 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
             if (rates.isEmpty()) {
                 Text("No rates set.", color = Color.Gray, fontSize = 12.sp)
             } else {
-                rates.forEach { rate ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("- ${rate.requiredEp} EP ➔ +${rate.rewardedAmount} ${wallet.unit}")
-                        Button(
-                            onClick = { viewModel.exchangeEp(rate) },
-                            enabled = (userStats?.currentEp ?: 0) >= rate.requiredEp
+                val chunkedRates = rates.chunked(3)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    chunkedRates.forEach { rowRates ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Exchange")
+                            for (rate in rowRates) {
+                                Button(
+                                    onClick = { viewModel.exchangeEp(rate) },
+                                    enabled = (userStats?.currentEp ?: 0) >= rate.requiredEp,
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(4.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "-${rate.requiredEp}EP\n➔+${rate.rewardedAmount}${wallet.unit}",
+                                        fontSize = 12.sp,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
+                            val emptySlots = 3 - rowRates.size
+                            for (i in 0 until emptySlots) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 OutlinedButton(onClick = { showAddRateDialog = true }) {
                     Text("Add Rate")
                 }
-                Button(onClick = { showConsumeDialog = true }) {
-                    Text("Consume")
+                Button(
+                    onClick = { showConsumeDialog = true },
+                    modifier = Modifier.height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Text("Consume", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -160,24 +212,60 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
     if (showAddRateDialog) {
         var reqEp by remember { mutableStateOf("") }
         var rewAmount by remember { mutableStateOf("") }
+        var reqEpError by remember { mutableStateOf<String?>(null) }
+        var rewAmountError by remember { mutableStateOf<String?>(null) }
+        val focusRequester = remember { FocusRequester() }
+
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
         AlertDialog(
             onDismissRequest = { showAddRateDialog = false },
             title = { Text("Add Exchange Rate") },
             text = {
-                Column {
-                    OutlinedTextField(value = reqEp, onValueChange = { reqEp = it }, label = { Text("Required EP") })
-                    OutlinedTextField(value = rewAmount, onValueChange = { rewAmount = it }, label = { Text("Rewarded Amount (${wallet.unit})") })
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = reqEp,
+                        onValueChange = { 
+                            reqEp = it
+                            if (reqEpError != null) reqEpError = null
+                        },
+                        label = { Text("Required EP") },
+                        singleLine = true,
+                        isError = reqEpError != null,
+                        supportingText = reqEpError?.let { { Text(it) } },
+                        modifier = Modifier.focusRequester(focusRequester),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                    )
+                    OutlinedTextField(
+                        value = rewAmount,
+                        onValueChange = { 
+                            rewAmount = it
+                            if (rewAmountError != null) rewAmountError = null
+                        },
+                        label = { Text("Rewarded Amount (${wallet.unit})") },
+                        singleLine = true,
+                        isError = rewAmountError != null,
+                        supportingText = rewAmountError?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
+                    )
                 }
             },
             confirmButton = {
                 Button(onClick = {
+                    var isValid = true
                     val ep = reqEp.toIntOrNull()
                     val am = rewAmount.toIntOrNull()
-                    if (ep != null && am != null) {
+                    if (ep == null || ep <= 0) { reqEpError = "正の整数を入力してください"; isValid = false }
+                    if (am == null || am <= 0) { rewAmountError = "正の整数を入力してください"; isValid = false }
+                    
+                    if (isValid && ep != null && am != null) {
                         viewModel.addExchangeRate(wallet.id, ep, am)
                         showAddRateDialog = false
                     }
                 }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddRateDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -185,23 +273,59 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
     if (showConsumeDialog) {
         var amount by remember { mutableStateOf("") }
         var memo by remember { mutableStateOf("") }
+        var amountError by remember { mutableStateOf<String?>(null) }
+        var memoError by remember { mutableStateOf<String?>(null) }
+        val focusRequester = remember { FocusRequester() }
+
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
         AlertDialog(
             onDismissRequest = { showConsumeDialog = false },
             title = { Text("Consume from Wallet") },
             text = {
-                Column {
-                    OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount (${wallet.unit})") })
-                    OutlinedTextField(value = memo, onValueChange = { memo = it }, label = { Text("Memo (e.g. Bought a book)") })
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = { 
+                            amount = it
+                            if (amountError != null) amountError = null
+                        },
+                        label = { Text("Amount (${wallet.unit})") },
+                        singleLine = true,
+                        isError = amountError != null,
+                        supportingText = amountError?.let { { Text(it) } },
+                        modifier = Modifier.focusRequester(focusRequester),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                    )
+                    OutlinedTextField(
+                        value = memo,
+                        onValueChange = { 
+                            memo = it
+                            if (memoError != null) memoError = null
+                        },
+                        label = { Text("Memo (e.g. Bought a book)") },
+                        singleLine = true,
+                        isError = memoError != null,
+                        supportingText = memoError?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                    )
                 }
             },
             confirmButton = {
                 Button(onClick = {
+                    var isValid = true
                     val am = amount.toIntOrNull()
-                    if (am != null && am > 0 && memo.isNotBlank()) {
+                    if (am == null || am <= 0) { amountError = "正の整数を入力してください"; isValid = false }
+                    if (memo.isBlank()) { memoError = "メモを入力してください"; isValid = false }
+                    
+                    if (isValid && am != null) {
                         viewModel.consumeFromWallet(wallet.id, am, memo)
                         showConsumeDialog = false
                     }
                 }) { Text("Consume") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConsumeDialog = false }) { Text("Cancel") }
             }
         )
     }
