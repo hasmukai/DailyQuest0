@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import com.example.dailyquest0.utils.DateUtils
@@ -168,7 +169,53 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     // --- Stats ---
     fun getLogsBetweenDates(startDate: LocalDate, endDate: LocalDate) = 
         repository.getLogsForDate(startDate) // Note: Need a new repo method for between dates if we want full history. For MVP, we can just fetch all or last N days.
-    
+
+    val totalCompletedQuests = repository.getTotalCompletedQuests()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val completedDates = repository.getCompletedDates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val currentStreak = completedDates.map { dates ->
+        if (dates.isEmpty()) return@map 0
+        
+        val logicalToday = DateUtils.getLogicalDate()
+        val todayStr = logicalToday.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val yesterdayStr = logicalToday.minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE)
+        
+        if (dates[0] != todayStr && dates[0] != yesterdayStr) return@map 0
+        
+        var streak = 1
+        for (i in 0 until dates.size - 1) {
+            val current = LocalDate.parse(dates[i])
+            val next = LocalDate.parse(dates[i+1])
+            if (current.minusDays(1) == next) {
+                streak++
+            } else {
+                break
+            }
+        }
+        streak
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val maxStreak = completedDates.map { dates ->
+        if (dates.isEmpty()) return@map 0
+        
+        var max = 1
+        var current = 1
+        for (i in 0 until dates.size - 1) {
+            val currDate = LocalDate.parse(dates[i])
+            val nextDate = LocalDate.parse(dates[i+1])
+            if (currDate.minusDays(1) == nextDate) {
+                current++
+                if (current > max) max = current
+            } else {
+                current = 1
+            }
+        }
+        max
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
 }
 
 class AppViewModelFactory(private val repository: AppRepository) : ViewModelProvider.Factory {

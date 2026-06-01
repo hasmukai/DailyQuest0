@@ -50,6 +50,10 @@ class AppRepository(private val appDao: AppDao) {
         return appDao.getLogsFrom(date.format(dateFormatter))
     }
 
+    fun getTotalCompletedQuests(): Flow<Int> = appDao.getTotalCompletedQuests()
+
+    fun getCompletedDates(): Flow<List<String>> = appDao.getCompletedDates()
+
     fun getTemporaryQuestLogs(): Flow<List<DailyQuestLog>> {
         return appDao.getTemporaryQuestLogs(com.example.dailyquest0.data.entity.QuestType.TEMPORARY.displayName)
     }

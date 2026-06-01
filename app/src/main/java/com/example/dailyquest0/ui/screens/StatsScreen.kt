@@ -26,6 +26,9 @@ import androidx.compose.foundation.border
 fun StatsScreen(viewModel: AppViewModel) {
     val userStats by viewModel.userStats.collectAsState()
     val activityStats by viewModel.activityStats.collectAsState()
+    val totalCompletedQuests by viewModel.totalCompletedQuests.collectAsState()
+    val currentStreak by viewModel.currentStreak.collectAsState()
+    val maxStreak by viewModel.maxStreak.collectAsState()
     val walletsWithTransactions by viewModel.walletsWithTransactions.collectAsState()
     
     val logicalDate = DateUtils.getLogicalDate()
@@ -67,11 +70,14 @@ fun StatsScreen(viewModel: AppViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Lifetime Stats", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text("Total EP Earned: ${userStats?.totalEp ?: 0}", fontSize = 16.sp)
                     Text("Current EP Balance: ${userStats?.currentEp ?: 0}", fontSize = 16.sp)
+                    Text("Total Quests Completed: $totalCompletedQuests", fontSize = 16.sp)
+                    Text("Current Streak: $currentStreak days", fontSize = 16.sp)
+                    Text("Max Streak: $maxStreak days", fontSize = 16.sp)
                 }
             }
             

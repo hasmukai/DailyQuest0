@@ -45,6 +45,12 @@ interface AppDao {
     @Query("SELECT date, COUNT(id) as count FROM daily_quest_logs WHERE date >= :startDate GROUP BY date")
     fun getCompletionCountsFrom(startDate: String): Flow<List<com.example.dailyquest0.data.entity.DateCount>>
 
+    @Query("SELECT COUNT(*) FROM daily_quest_logs WHERE isCompleted = 1")
+    fun getTotalCompletedQuests(): Flow<Int>
+
+    @Query("SELECT DISTINCT date FROM daily_quest_logs WHERE isCompleted = 1 ORDER BY date DESC")
+    fun getCompletedDates(): Flow<List<String>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDailyLog(log: DailyQuestLog): Long
 
