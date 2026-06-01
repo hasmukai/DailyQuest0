@@ -103,4 +103,14 @@ interface AppDao {
     
     @Query("UPDATE user_stats SET currentEp = currentEp - :ep WHERE id = 1")
     suspend fun spendEp(ep: Int): Int
+
+    // --- DailyEpSnapshot ---
+    @Query("SELECT * FROM daily_ep_snapshots ORDER BY date DESC")
+    fun getEpSnapshots(): Flow<List<com.example.dailyquest0.data.entity.DailyEpSnapshot>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEpSnapshot(snapshot: com.example.dailyquest0.data.entity.DailyEpSnapshot)
+
+    @Query("SELECT * FROM daily_ep_snapshots ORDER BY date DESC LIMIT 1")
+    suspend fun getLatestEpSnapshot(): com.example.dailyquest0.data.entity.DailyEpSnapshot?
 }

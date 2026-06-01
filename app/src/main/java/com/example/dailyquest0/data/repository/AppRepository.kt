@@ -11,8 +11,10 @@ import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.data.entity.WalletTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import com.example.dailyquest0.data.entity.DailyEpSnapshot
 
 class AppRepository(private val appDao: AppDao) {
     
@@ -20,7 +22,19 @@ class AppRepository(private val appDao: AppDao) {
     fun getUserStats(): Flow<UserStats?> = appDao.getUserStats()
     
     suspend fun initUserStats() {
+        // Initialize with default 0 if no user stats exist
         appDao.insertUserStats(UserStats(id = 1, totalEp = 0, currentEp = 0))
+    }
+    
+    fun getEpSnapshots(): Flow<List<DailyEpSnapshot>> = appDao.getEpSnapshots()
+
+    private suspend fun updateEpSnapshot() {
+        val stats = appDao.getUserStats().first() ?: return
+        val logicalDate = DateUtils.getLogicalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        appDao.insertEpSnapshot(DailyEpSnapshot(
+            date = logicalDate,
+            balance = stats.currentEp
+        ))
     }
 
     // --- Quests ---
@@ -91,6 +105,7 @@ class AppRepository(private val appDao: AppDao) {
             }
             appDao.spendEp(quest.epReward) // revert EP
         }
+        updateEpSnapshot()
     }
 
     // --- Wallet & Shop ---
@@ -122,6 +137,7 @@ class AppRepository(private val appDao: AppDao) {
     suspend fun exchangeEp(rate: ExchangeRate) {
         // 1. Spend EP
         appDao.spendEp(rate.requiredEp)
+        updateEpSnapshot()
         // 2. Add transaction to wallet
         val transaction = WalletTransaction(
             walletId = rate.walletId,

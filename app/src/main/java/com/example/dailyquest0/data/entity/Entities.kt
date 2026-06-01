@@ -94,6 +94,13 @@ data class UserStats(
     val currentEp: Int = 0
 )
 
+@Entity(tableName = "daily_ep_snapshots")
+data class DailyEpSnapshot(
+    @PrimaryKey
+    val date: String, // format: YYYY-MM-DD
+    val balance: Int
+)
+
 data class DateCount(
     val date: String,
     val count: Int

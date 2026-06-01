@@ -173,6 +173,9 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     val totalCompletedQuests = repository.getTotalCompletedQuests()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val epSnapshots = repository.getEpSnapshots()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val completedDates = repository.getCompletedDates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -11,6 +11,7 @@ import com.example.dailyquest0.data.entity.Quest
 import com.example.dailyquest0.data.entity.UserStats
 import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.data.entity.WalletTransaction
+import com.example.dailyquest0.data.entity.DailyEpSnapshot
 
 @Database(
     entities = [
@@ -19,9 +20,10 @@ import com.example.dailyquest0.data.entity.WalletTransaction
         Wallet::class,
         ExchangeRate::class,
         WalletTransaction::class,
-        UserStats::class
+        UserStats::class,
+        DailyEpSnapshot::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

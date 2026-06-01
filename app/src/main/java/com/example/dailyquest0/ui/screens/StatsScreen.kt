@@ -3,6 +3,8 @@ package com.example.dailyquest0.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -29,6 +31,7 @@ fun StatsScreen(viewModel: AppViewModel) {
     val totalCompletedQuests by viewModel.totalCompletedQuests.collectAsState()
     val currentStreak by viewModel.currentStreak.collectAsState()
     val maxStreak by viewModel.maxStreak.collectAsState()
+    val epSnapshots by viewModel.epSnapshots.collectAsState()
     val walletsWithTransactions by viewModel.walletsWithTransactions.collectAsState()
     
     val logicalDate = DateUtils.getLogicalDate()
@@ -64,25 +67,9 @@ fun StatsScreen(viewModel: AppViewModel) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
                 if (selectedTabIndex == 0) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Lifetime Stats", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("Total EP Earned: ${userStats?.totalEp ?: 0}", fontSize = 16.sp)
-                    Text("Current EP Balance: ${userStats?.currentEp ?: 0}", fontSize = 16.sp)
-                    Text("Total Quests Completed: $totalCompletedQuests", fontSize = 16.sp)
-                    Text("Current Streak: $currentStreak days", fontSize = 16.sp)
-                    Text("Max Streak: $maxStreak days", fontSize = 16.sp)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
             Text("Activity (Last 10 Weeks)", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
@@ -164,8 +151,29 @@ fun StatsScreen(viewModel: AppViewModel) {
             }
             }
             
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Lifetime Stats", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Total EP Earned: ${userStats?.totalEp ?: 0}", fontSize = 16.sp)
+                    Text("Total Quests Completed: $totalCompletedQuests", fontSize = 16.sp)
+                    Text("Current Streak: $currentStreak days", fontSize = 16.sp)
+                    Text("Max Streak: $maxStreak days", fontSize = 16.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text("EP Balance History", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-                } // End of selectedTabIndex == 0
+            EpHistoryChart(snapshots = epSnapshots)
+
+        } // End of selectedTabIndex == 0
                 else {
                     // Wallet Stats Tab
                     if (walletsWithTransactions.isEmpty()) {
@@ -299,6 +307,123 @@ fun StatsScreen(viewModel: AppViewModel) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun EpHistoryChart(snapshots: List<com.example.dailyquest0.data.entity.DailyEpSnapshot>) {
+    if (snapshots.isEmpty()) {
+        Text("No history available yet", color = Color.Gray, fontSize = 14.sp)
+        return
+    }
+
+    // Sort by date ascending for the chart
+    val sortedSnapshots = snapshots.sortedBy { it.date }
+    val maxEp = sortedSnapshots.maxOfOrNull { it.balance }?.coerceAtLeast(1) ?: 1
+    val minEp = sortedSnapshots.minOfOrNull { it.balance } ?: 0
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val axisColor = Color.LightGray
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(vertical = 8.dp)
+    ) {
+        // Y-axis Labels
+        Column(
+            modifier = Modifier.fillMaxHeight().padding(end = 8.dp, bottom = 20.dp), // Bottom padding for X-axis space
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.End
+        ) {
+            Text(maxEp.toString(), fontSize = 10.sp, color = Color.Gray)
+            Text(((maxEp + minEp) / 2).toString(), fontSize = 10.sp, color = Color.Gray)
+            Text(minEp.toString(), fontSize = 10.sp, color = Color.Gray)
+        }
+
+        // Chart Area
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            ) {
+                val width = size.width
+                val height = size.height
+                val pointSpacing = if (sortedSnapshots.size > 1) width / (sortedSnapshots.size - 1) else width
+
+                // Draw Y-axis line
+                drawLine(
+                    color = axisColor,
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(0f, height),
+                    strokeWidth = 1.dp.toPx()
+                )
+
+                // Draw X-axis line
+                drawLine(
+                    color = axisColor,
+                    start = androidx.compose.ui.geometry.Offset(0f, height),
+                    end = androidx.compose.ui.geometry.Offset(width, height),
+                    strokeWidth = 1.dp.toPx()
+                )
+
+                // Grid lines (middle)
+                drawLine(
+                    color = axisColor.copy(alpha = 0.3f),
+                    start = androidx.compose.ui.geometry.Offset(0f, height / 2),
+                    end = androidx.compose.ui.geometry.Offset(width, height / 2),
+                    strokeWidth = 1.dp.toPx()
+                )
+
+                val path = androidx.compose.ui.graphics.Path()
+
+                sortedSnapshots.forEachIndexed { index, snapshot ->
+                    val x = index * pointSpacing
+                    val yRatio = if (maxEp == minEp) 0.5f else (snapshot.balance - minEp).toFloat() / (maxEp - minEp).toFloat()
+                    val y = height - (yRatio * height)
+
+                    if (index == 0) {
+                        path.moveTo(x, y)
+                    } else {
+                        path.lineTo(x, y)
+                    }
+                }
+
+                drawPath(
+                    path = path,
+                    color = primaryColor,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 2.dp.toPx(),
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                )
+                
+                // Draw points
+                sortedSnapshots.forEachIndexed { index, snapshot ->
+                    val x = index * pointSpacing
+                    val yRatio = if (maxEp == minEp) 0.5f else (snapshot.balance - minEp).toFloat() / (maxEp - minEp).toFloat()
+                    val y = height - (yRatio * height)
+                    
+                    drawCircle(
+                        color = primaryColor,
+                        radius = 3.dp.toPx(),
+                        center = androidx.compose.ui.geometry.Offset(x, y)
+                    )
+                }
+            }
+
+            // X-axis Labels (Start and End Dates)
+            Row(
+                modifier = Modifier.fillMaxWidth().height(20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val startStr = sortedSnapshots.firstOrNull()?.date?.substring(5) ?: "" // MM-DD
+                val endStr = sortedSnapshots.lastOrNull()?.date?.substring(5) ?: ""
+                Text(startStr, fontSize = 10.sp, color = Color.Gray)
+                Text(endStr, fontSize = 10.sp, color = Color.Gray)
             }
         }
     }
