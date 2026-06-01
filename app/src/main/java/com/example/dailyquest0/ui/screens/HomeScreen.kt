@@ -165,7 +165,12 @@ fun HomeScreen(viewModel: AppViewModel) {
             if (selectedFilter == QuestType.DAILY.displayName || selectedFilter == QuestType.WEEKLY.displayName) {
                 val totalQuests = filteredQuests.size
                 val completedCount = filteredQuests.count { completedQuestIds.contains(it.id) }
-                val progress = if (totalQuests > 0) completedCount.toFloat() / totalQuests.toFloat() else 0f
+                val targetProgress = if (totalQuests > 0) completedCount.toFloat() / totalQuests.toFloat() else 0f
+                val progress by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = targetProgress,
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 500),
+                    label = "progress animation"
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
