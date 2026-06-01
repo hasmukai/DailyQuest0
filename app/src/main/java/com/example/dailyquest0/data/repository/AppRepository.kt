@@ -59,6 +59,10 @@ class AppRepository(private val appDao: AppDao) {
             list.associate { it.date to it.count }
         }
     }
+    
+    fun getWalletsWithTransactions(): Flow<List<com.example.dailyquest0.data.entity.WalletWithTransactions>> {
+        return appDao.getWalletsWithTransactions()
+    }
 
     suspend fun toggleQuestCompletion(quest: Quest, isCompleted: Boolean) {
         val logicalDate = DateUtils.getLogicalDate()

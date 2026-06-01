@@ -27,6 +27,9 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
 
     val activityStats = repository.getActivityStats(DateUtils.getLogicalDate().minusDays(80))
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        
+    val walletsWithTransactions = repository.getWalletsWithTransactions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Home Screen (Quests)
     val quests = repository.getAllQuests()

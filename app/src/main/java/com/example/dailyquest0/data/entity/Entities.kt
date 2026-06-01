@@ -98,3 +98,12 @@ data class DateCount(
     val date: String,
     val count: Int
 )
+
+data class WalletWithTransactions(
+    @androidx.room.Embedded val wallet: Wallet,
+    @androidx.room.Relation(
+        parentColumn = "id",
+        entityColumn = "walletId"
+    )
+    val transactions: List<WalletTransaction>
+)

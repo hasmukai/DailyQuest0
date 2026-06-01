@@ -75,6 +75,10 @@ interface AppDao {
     @Query("SELECT * FROM wallet_transactions WHERE walletId = :walletId ORDER BY createdAt DESC")
     fun getTransactionsForWallet(walletId: Long): Flow<List<WalletTransaction>>
     
+    @Transaction
+    @Query("SELECT * FROM wallets")
+    fun getWalletsWithTransactions(): Flow<List<com.example.dailyquest0.data.entity.WalletWithTransactions>>
+    
     @Query("SELECT SUM(amount) FROM wallet_transactions WHERE walletId = :walletId")
     fun getWalletBalance(walletId: Long): Flow<Int?>
 

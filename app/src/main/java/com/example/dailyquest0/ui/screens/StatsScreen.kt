@@ -25,9 +25,13 @@ import androidx.compose.foundation.border
 fun StatsScreen(viewModel: AppViewModel) {
     val userStats by viewModel.userStats.collectAsState()
     val activityStats by viewModel.activityStats.collectAsState()
+    val walletsWithTransactions by viewModel.walletsWithTransactions.collectAsState()
     
     val logicalDate = DateUtils.getLogicalDate()
     val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Quests", "Wallet")
     
     // For MVP, we will fake a simple 30-day contribution graph
     // A full Github-style graph requires tracking dates rigorously and displaying them in a 7xN grid.
@@ -41,8 +45,23 @@ fun StatsScreen(viewModel: AppViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
         ) {
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title, fontWeight = FontWeight.Bold) }
+                    )
+                }
+            }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                if (selectedTabIndex == 0) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -139,7 +158,78 @@ fun StatsScreen(viewModel: AppViewModel) {
             }
             
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Each block represents a day. Darker green means more quests completed.", fontSize = 12.sp, color = Color.Gray)
+                } // End of selectedTabIndex == 0
+                else {
+                    // Wallet Stats Tab
+                    if (walletsWithTransactions.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No wallet transactions yet.", color = Color.Gray)
+                        }
+                    } else {
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(walletsWithTransactions.size) { index ->
+                                val walletWithTx = walletsWithTransactions[index]
+                                val wallet = walletWithTx.wallet
+                                val txs = walletWithTx.transactions.sortedByDescending { it.createdAt }
+                                
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            val icon = getQuestIcon(wallet.iconName, isFilled = true)
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = wallet.name,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(wallet.name, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            val balance = txs.sumOf { it.amount }
+                                            val balanceSign = if (balance > 0) "+" else ""
+                                            Text("$balanceSign$balance ${wallet.unit}", fontWeight = FontWeight.Bold, color = if (balance > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        
+                                        if (txs.isEmpty()) {
+                                            Text("No transactions.", fontSize = 14.sp, color = Color.Gray)
+                                        } else {
+                                            txs.forEach { tx ->
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(tx.memo.ifEmpty { "No Memo" }, fontSize = 14.sp)
+                                                        Text(
+                                                            tx.createdAt.substringBefore("T"), 
+                                                            fontSize = 12.sp, 
+                                                            color = Color.Gray
+                                                        )
+                                                    }
+                                                    val amountSign = if (tx.amount > 0) "+" else ""
+                                                    val amountColor = if (tx.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                                    Text("$amountSign${tx.amount}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = amountColor)
+                                                }
+                                                if (tx != txs.last()) {
+                                                    Divider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
