@@ -1,6 +1,7 @@
 package com.example.dailyquest0.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -166,6 +167,8 @@ fun StatsScreen(viewModel: AppViewModel) {
                             Text("No wallet transactions yet.", color = Color.Gray)
                         }
                     } else {
+                        var selectedWalletForHistory by remember { mutableStateOf<com.example.dailyquest0.data.entity.WalletWithTransactions?>(null) }
+                        
                         androidx.compose.foundation.lazy.LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.fillMaxSize()
@@ -201,31 +204,92 @@ fun StatsScreen(viewModel: AppViewModel) {
                                         if (txs.isEmpty()) {
                                             Text("No transactions.", fontSize = 14.sp, color = Color.Gray)
                                         } else {
-                                            txs.forEach { tx ->
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                                    horizontalArrangement = Arrangement.SpaceBetween
-                                                ) {
-                                                    Column(modifier = Modifier.weight(1f)) {
-                                                        Text(tx.memo.ifEmpty { "No Memo" }, fontSize = 14.sp)
-                                                        Text(
-                                                            tx.createdAt.substringBefore("T"), 
-                                                            fontSize = 12.sp, 
-                                                            color = Color.Gray
-                                                        )
+                                            val recentTxs = txs.take(4)
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .clickable { selectedWalletForHistory = walletWithTx }
+                                                    .padding(8.dp)
+                                            ) {
+                                                recentTxs.forEach { tx ->
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                        horizontalArrangement = Arrangement.SpaceBetween
+                                                    ) {
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                            Text(tx.memo.ifEmpty { "No Memo" }, fontSize = 14.sp)
+                                                            Text(
+                                                                tx.createdAt.substringBefore("T"), 
+                                                                fontSize = 12.sp, 
+                                                                color = Color.Gray
+                                                            )
+                                                        }
+                                                        val amountSign = if (tx.amount > 0) "+" else ""
+                                                        val amountColor = if (tx.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                                        Text("$amountSign${tx.amount}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = amountColor)
                                                     }
-                                                    val amountSign = if (tx.amount > 0) "+" else ""
-                                                    val amountColor = if (tx.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                                                    Text("$amountSign${tx.amount}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = amountColor)
+                                                    if (tx != recentTxs.last()) {
+                                                        Divider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                                                    }
                                                 }
-                                                if (tx != txs.last()) {
-                                                    Divider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                                                if (txs.size > 4) {
+                                                    Text(
+                                                        text = "View all ${txs.size} records...",
+                                                        fontSize = 12.sp,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally)
+                                                    )
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
+                        }
+                        
+                        selectedWalletForHistory?.let { walletWithTx ->
+                            val wallet = walletWithTx.wallet
+                            val allTxs = remember(walletWithTx.transactions) { walletWithTx.transactions.sortedByDescending { it.createdAt } }
+                            AlertDialog(
+                                onDismissRequest = { selectedWalletForHistory = null },
+                                title = { Text("${wallet.name} History") },
+                                text = {
+                                    androidx.compose.foundation.lazy.LazyColumn(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
+                                    ) {
+                                        items(allTxs.size) { i ->
+                                            val tx = allTxs[i]
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(tx.memo.ifEmpty { "No Memo" }, fontSize = 14.sp)
+                                                    Text(
+                                                        tx.createdAt.replace("T", " ").substringBefore("."), 
+                                                        fontSize = 12.sp, 
+                                                        color = Color.Gray
+                                                    )
+                                                }
+                                                val amountSign = if (tx.amount > 0) "+" else ""
+                                                val amountColor = if (tx.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                                Text("$amountSign${tx.amount}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = amountColor)
+                                            }
+                                            if (i != allTxs.lastIndex) {
+                                                Divider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                                            }
+                                        }
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = { selectedWalletForHistory = null }) {
+                                        Text("Close")
+                                    }
+                                }
+                            )
                         }
                     }
                 }
