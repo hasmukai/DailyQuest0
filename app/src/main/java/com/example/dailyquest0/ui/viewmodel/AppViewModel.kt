@@ -12,6 +12,12 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.delay
+import java.time.format.DateTimeFormatter
+import com.example.dailyquest0.utils.DateUtils
 
 class AppViewModel(private val repository: AppRepository) : ViewModel() {
 
@@ -23,8 +29,48 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     val quests = repository.getAllQuests()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val todayLogs = repository.getLogsForDate(LocalDate.now())
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val refreshTick = flow {
+        while (true) {
+            emit(Unit)
+            delay(60000) // refresh every minute
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val completedQuestIds = refreshTick.flatMapLatest {
+        val logicalDate = DateUtils.getLogicalDate()
+        val logicalWeekStart = DateUtils.getLogicalWeekStart()
+        val todayStr = logicalDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+
+        combine(
+            quests,
+            repository.getLogsFrom(logicalWeekStart),
+            repository.getTemporaryQuestLogs()
+        ) { questsList, weekLogs, tempLogs ->
+            val completedIds = mutableSetOf<Long>()
+            
+            for (quest in questsList) {
+                when (quest.type) {
+                    "Daily" -> {
+                        if (weekLogs.any { it.questId == quest.id && it.date == todayStr && it.isCompleted }) {
+                            completedIds.add(quest.id)
+                        }
+                    }
+                    "Weekly" -> {
+                        if (weekLogs.any { it.questId == quest.id && it.isCompleted }) {
+                            completedIds.add(quest.id)
+                        }
+                    }
+                    "Temporary" -> {
+                        if (tempLogs.any { it.questId == quest.id && it.isCompleted }) {
+                            completedIds.add(quest.id)
+                        }
+                    }
+                }
+            }
+            completedIds
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     // Wallet Screen
     val wallets = repository.getAllWallets()
@@ -64,7 +110,7 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
 
     fun toggleQuest(quest: Quest, isCompleted: Boolean) {
         viewModelScope.launch {
-            repository.toggleQuestCompletion(quest, LocalDate.now(), isCompleted)
+            repository.toggleQuestCompletion(quest, isCompleted)
         }
     }
 

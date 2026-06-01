@@ -1,5 +1,7 @@
 package com.example.dailyquest0.data.repository
 
+import com.example.dailyquest0.utils.DateUtils
+
 import com.example.dailyquest0.data.dao.AppDao
 import com.example.dailyquest0.data.entity.DailyQuestLog
 import com.example.dailyquest0.data.entity.ExchangeRate
@@ -43,27 +45,36 @@ class AppRepository(private val appDao: AppDao) {
         return appDao.getLogsForDate(date.format(dateFormatter))
     }
 
-    suspend fun toggleQuestCompletion(quest: Quest, date: LocalDate, isCompleted: Boolean) {
-        val dateStr = date.format(dateFormatter)
-        
-        // 1. Update the log
-        val log = DailyQuestLog(
-            questId = quest.id,
-            date = dateStr,
-            isCompleted = isCompleted
-        )
-        // Note: Room's REPLACE strategy might replace an existing id if not careful, 
-        // but since we don't know the log id here, we might need to check if it exists first.
-        // For MVP, we can insert without id if we define a composite primary key. 
-        // Wait, DailyQuestLog has a generated ID. We need a unique constraint on (questId, date) in Entity.
-        // I will fix this in Entities shortly. Assuming it handles upsert:
-        appDao.insertDailyLog(log)
+    fun getLogsFrom(date: LocalDate): Flow<List<DailyQuestLog>> {
+        return appDao.getLogsFrom(date.format(dateFormatter))
+    }
 
-        // 2. Add or subtract EP
+    fun getTemporaryQuestLogs(): Flow<List<DailyQuestLog>> {
+        return appDao.getTemporaryQuestLogs()
+    }
+
+    suspend fun toggleQuestCompletion(quest: Quest, isCompleted: Boolean) {
+        val logicalDate = DateUtils.getLogicalDate()
+        val dateStr = logicalDate.format(dateFormatter)
+        
         if (isCompleted) {
+            val log = DailyQuestLog(
+                questId = quest.id,
+                date = dateStr,
+                isCompleted = true
+            )
+            appDao.insertDailyLog(log)
             appDao.addEp(quest.epReward)
         } else {
-            appDao.spendEp(quest.epReward) // revert
+            if (quest.type == "Daily") {
+                appDao.deleteLogForQuestOnDate(quest.id, dateStr)
+            } else if (quest.type == "Weekly") {
+                val weekStartStr = DateUtils.getLogicalWeekStart().format(dateFormatter)
+                appDao.deleteLogsForQuestBetween(quest.id, weekStartStr, dateStr)
+            } else if (quest.type == "Temporary") {
+                appDao.deleteAllLogsForQuest(quest.id)
+            }
+            appDao.spendEp(quest.epReward) // revert EP
         }
     }
 

@@ -37,7 +37,7 @@ import com.example.dailyquest0.ui.viewmodel.AppViewModel
 @Composable
 fun HomeScreen(viewModel: AppViewModel) {
     val quests by viewModel.quests.collectAsState()
-    val todayLogs by viewModel.todayLogs.collectAsState()
+    val completedQuestIds by viewModel.completedQuestIds.collectAsState()
     val userStats by viewModel.userStats.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
@@ -99,7 +99,7 @@ fun HomeScreen(viewModel: AppViewModel) {
             }
             
             val sortedQuests = filteredQuests.sortedBy { quest ->
-                todayLogs.any { it.questId == quest.id && it.isCompleted }
+                completedQuestIds.contains(quest.id)
             }
 
             if (sortedQuests.isEmpty()) {
@@ -109,7 +109,7 @@ fun HomeScreen(viewModel: AppViewModel) {
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(sortedQuests) { quest ->
-                        val isCompleted = todayLogs.any { it.questId == quest.id && it.isCompleted }
+                        val isCompleted = completedQuestIds.contains(quest.id)
                         QuestItem(
                             quest = quest,
                             isCompleted = isCompleted,
