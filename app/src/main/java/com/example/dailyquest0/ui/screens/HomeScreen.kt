@@ -32,6 +32,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import com.example.dailyquest0.data.entity.Quest
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
+import com.example.dailyquest0.utils.DateUtils
+import java.time.LocalDateTime
+import java.time.Duration
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +48,35 @@ fun HomeScreen(viewModel: AppViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingQuest by remember { mutableStateOf<Quest?>(null) }
     var questToDelete by remember { mutableStateOf<Quest?>(null) }
+    
+    var timeRemaining by remember { mutableStateOf("") }
+
+    LaunchedEffect(selectedFilter) {
+        if (selectedFilter == "Daily" || selectedFilter == "Weekly") {
+            while (true) {
+                val now = LocalDateTime.now()
+                val target = if (selectedFilter == "Daily") {
+                    DateUtils.getNextDailyReset()
+                } else {
+                    DateUtils.getNextWeeklyReset()
+                }
+                val duration = Duration.between(now, target)
+                val days = duration.toDays()
+                val hours = duration.toHours() % 24
+                val minutes = duration.toMinutes() % 60
+                val seconds = duration.seconds % 60
+                
+                timeRemaining = if (days > 0) {
+                    "${days}日 ${hours}時間 ${minutes}分 ${seconds}秒"
+                } else {
+                    "${hours}時間 ${minutes}分 ${seconds}秒"
+                }
+                delay(1000)
+            }
+        } else {
+            timeRemaining = ""
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -90,6 +123,15 @@ fun HomeScreen(viewModel: AppViewModel) {
                         Text(option)
                     }
                 }
+            }
+
+            if (timeRemaining.isNotEmpty()) {
+                Text(
+                    text = "リセットまで: $timeRemaining",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.End).padding(bottom = 8.dp)
+                )
             }
 
             val filteredQuests = if (selectedFilter == "All") {
