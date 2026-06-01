@@ -147,19 +147,12 @@ fun HomeScreen(viewModel: AppViewModel) {
         ) {
 
             val filterOptions = listOf("All") + QuestType.values().map { it.displayName }
-            SingleChoiceSegmentedButtonRow(
+            CustomSegmentedControl(
+                options = filterOptions,
+                selectedOption = selectedFilter,
+                onOptionSelected = { viewModel.setFilter(it) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-            ) {
-                filterOptions.forEachIndexed { index, option ->
-                    SegmentedButton(
-                        selected = option == selectedFilter,
-                        onClick = { viewModel.setFilter(option) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = filterOptions.size)
-                    ) {
-                        Text(option)
-                    }
-                }
-            }
+            )
 
             val filteredQuests = remember(selectedFilter, quests) {
                 if (selectedFilter == "All") {
@@ -592,3 +585,72 @@ fun EditQuestDialog(
 }
 
 
+
+@Composable
+fun CustomSegmentedControl(
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val selectedIndex = options.indexOf(selectedOption).takeIf { it >= 0 } ?: 0
+    
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(percent = 50),
+        modifier = modifier.height(48.dp)
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val segmentWidth = maxWidth / options.size
+            
+            val indicatorOffset by androidx.compose.animation.core.animateDpAsState(
+                targetValue = segmentWidth * selectedIndex,
+                animationSpec = tween(durationMillis = 300),
+                label = "indicator offset"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = indicatorOffset)
+                    .width(segmentWidth)
+                    .fillMaxHeight()
+                    .padding(4.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(percent = 50),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 2.dp
+                ) {}
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                options.forEachIndexed { index, option ->
+                    val isSelected = selectedOption == option
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null
+                            ) { onOptionSelected(option) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = option,
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
