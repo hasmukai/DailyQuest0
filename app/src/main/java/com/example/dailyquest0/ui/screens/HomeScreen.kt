@@ -5,6 +5,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -120,24 +123,43 @@ fun HomeScreen(viewModel: AppViewModel) {
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add Quest")
+    val currentEp = userStats?.currentEp ?: 0
+    var previousEp by remember { mutableIntStateOf(currentEp) }
+    var epDiffs by remember { mutableStateOf(listOf<EpDiff>()) }
+
+    LaunchedEffect(currentEp) {
+        if (currentEp != previousEp) {
+            val diffAmount = currentEp - previousEp
+            val newDiff = EpDiff(id = java.util.UUID.randomUUID().toString(), amount = diffAmount)
+            epDiffs = epDiffs + newDiff
+            previousEp = currentEp
+            
+            launch {
+                delay(1500)
+                epDiffs = epDiffs.filter { it.id != newDiff.id }
             }
-        },
-        topBar = {
-            TopAppBar(
-                title = { Text("DailyQuest", fontWeight = FontWeight.Bold) },
-                actions = {
-                    AssistChip(
-                        onClick = { },
-                        label = { Text("${userStats?.currentEp ?: 0} EP", fontWeight = FontWeight.Bold) },
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                }
-            )
         }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            floatingActionButton = {
+                FloatingActionButton(onClick = { showAddDialog = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Add Quest")
+                }
+            },
+            topBar = {
+                TopAppBar(
+                    title = { Text("DailyQuest", fontWeight = FontWeight.Bold) },
+                    actions = {
+                        AssistChip(
+                            onClick = { },
+                            label = { Text("${currentEp} EP", fontWeight = FontWeight.Bold) },
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
+                    }
+                )
+            }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -279,6 +301,22 @@ fun HomeScreen(viewModel: AppViewModel) {
                 TextButton(onClick = { questToDelete = null }) { Text("Cancel") }
             }
         )
+    }
+        
+        // Floating diff text overlay
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = 12.dp, end = 32.dp),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            epDiffs.forEach { diff ->
+                key(diff.id) {
+                    FloatingDiffText(diff = diff)
+                }
+            }
+        }
     }
 }
 
@@ -657,5 +695,37 @@ fun CustomSegmentedControl(
                 }
             }
         }
+    }
+}
+
+data class EpDiff(val id: String, val amount: Int)
+
+@Composable
+fun FloatingDiffText(diff: EpDiff) {
+    var visible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        visible = true
+        delay(800)
+        visible = false
+    }
+    
+    androidx.compose.animation.AnimatedVisibility(
+        visible = visible,
+        enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it / 2 }) + androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)),
+        exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { -it }) + androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(500)),
+        modifier = Modifier.offset(y = (-20).dp)
+    ) {
+        val sign = if (diff.amount > 0) "+" else ""
+        val color = if (diff.amount > 0) androidx.compose.ui.graphics.Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+        Text(
+            text = "$sign${diff.amount}",
+            color = color,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), RoundedCornerShape(4.dp))
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        )
     }
 }
