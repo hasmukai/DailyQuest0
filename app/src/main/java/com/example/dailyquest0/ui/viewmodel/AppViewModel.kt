@@ -83,7 +83,7 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     }
 
     // Add selected filter state
-    private val _selectedFilter = MutableStateFlow("All")
+    private val _selectedFilter = MutableStateFlow("Daily")
     val selectedFilter = _selectedFilter.asStateFlow()
 
     fun setFilter(filter: String) {
