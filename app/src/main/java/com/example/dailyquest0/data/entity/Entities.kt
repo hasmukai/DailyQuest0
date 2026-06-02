@@ -114,3 +114,8 @@ data class WalletWithTransactions(
     )
     val transactions: List<WalletTransaction>
 )
+
+@Entity(tableName = "perfect_day_logs")
+data class PerfectDayLog(
+    @PrimaryKey val date: String
+)

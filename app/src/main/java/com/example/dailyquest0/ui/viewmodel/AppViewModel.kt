@@ -31,6 +31,9 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     val activityStats = repository.getActivityStats(DateUtils.getLogicalDate().minusDays(80))
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
         
+    val perfectDays = repository.getPerfectDays()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val walletsWithTransactions = repository.getWalletsWithTransactions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -22,13 +22,15 @@ import com.example.dailyquest0.ui.viewmodel.AppViewModel
 import com.example.dailyquest0.utils.DateUtils
 import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.border
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocalFlorist
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(viewModel: AppViewModel) {
     val userStats by viewModel.userStats.collectAsState()
     val activityStats by viewModel.activityStats.collectAsState()
     val totalCompletedQuests by viewModel.totalCompletedQuests.collectAsState()
+    val perfectDays by viewModel.perfectDays.collectAsState()
     val currentStreak by viewModel.currentStreak.collectAsState()
     val maxStreak by viewModel.maxStreak.collectAsState()
     val epSnapshots by viewModel.epSnapshots.collectAsState()
@@ -131,6 +133,8 @@ fun StatsScreen(viewModel: AppViewModel) {
                             }
                             
                             val isToday = date == logicalDate
+                            val isAllDailyCompleted = perfectDays.contains(dateStr)
+                            
                                 val boxModifier = Modifier
                                     .fillMaxWidth()
                                     .height(boxSize)
@@ -142,8 +146,18 @@ fun StatsScreen(viewModel: AppViewModel) {
                                     boxModifier.then(Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
                                 } else {
                                     boxModifier
+                                },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isAllDailyCompleted) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocalFlorist,
+                                        contentDescription = "All Daily Quests Completed",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(boxSize * 0.7f)
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }

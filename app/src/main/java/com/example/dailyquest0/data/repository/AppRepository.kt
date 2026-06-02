@@ -43,14 +43,17 @@ class AppRepository(private val appDao: AppDao) {
     suspend fun addQuest(title: String, epReward: Int, type: String = com.example.dailyquest0.data.entity.QuestType.DAILY.displayName, iconName: String = com.example.dailyquest0.data.entity.QuestIcon.CHECK_CIRCLE.iconName) {
         val quest = Quest(title = title, epReward = epReward, type = type, iconName = iconName)
         appDao.insertQuest(quest)
+        evaluatePerfectDay()
     }
 
     suspend fun updateQuest(quest: Quest) {
         appDao.updateQuest(quest)
+        evaluatePerfectDay()
     }
 
     suspend fun deleteQuest(questId: Long) {
         appDao.deleteQuest(questId)
+        evaluatePerfectDay()
     }
 
     // --- Daily Logs (The "芝生" / Habit Tracker part) ---
@@ -106,6 +109,7 @@ class AppRepository(private val appDao: AppDao) {
             appDao.spendEp(quest.epReward) // revert EP
         }
         updateEpSnapshot()
+        evaluatePerfectDay()
     }
 
     // --- Wallet & Shop ---
@@ -158,4 +162,27 @@ class AppRepository(private val appDao: AppDao) {
         )
         appDao.insertWalletTransaction(transaction)
     }
+
+    // --- Perfect Day Evaluation ---
+    suspend fun evaluatePerfectDay() {
+        val logicalDate = DateUtils.getLogicalDate().format(dateFormatter)
+        val allQuests = appDao.getAllQuests().first()
+        val dailyQuests = allQuests.filter { it.type == com.example.dailyquest0.data.entity.QuestType.DAILY.displayName }
+        
+        if (dailyQuests.isEmpty()) {
+            appDao.deletePerfectDay(logicalDate)
+            return
+        }
+        
+        val todayLogs = appDao.getLogsForDate(logicalDate).first()
+        val completedDailyQuests = todayLogs.count { log -> log.isCompleted && dailyQuests.any { it.id == log.questId } }
+        
+        if (completedDailyQuests >= dailyQuests.size) {
+            appDao.insertPerfectDay(com.example.dailyquest0.data.entity.PerfectDayLog(logicalDate))
+        } else {
+            appDao.deletePerfectDay(logicalDate)
+        }
+    }
+    
+    fun getPerfectDays(): Flow<List<String>> = appDao.getPerfectDays()
 }

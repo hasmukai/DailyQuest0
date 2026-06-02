@@ -113,4 +113,14 @@ interface AppDao {
 
     @Query("SELECT * FROM daily_ep_snapshots ORDER BY date DESC LIMIT 1")
     suspend fun getLatestEpSnapshot(): com.example.dailyquest0.data.entity.DailyEpSnapshot?
+
+    // --- PerfectDayLog ---
+    @Query("SELECT date FROM perfect_day_logs")
+    fun getPerfectDays(): Flow<List<String>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPerfectDay(log: com.example.dailyquest0.data.entity.PerfectDayLog)
+
+    @Query("DELETE FROM perfect_day_logs WHERE date = :date")
+    suspend fun deletePerfectDay(date: String)
 }
