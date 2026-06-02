@@ -133,6 +133,18 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
         }
     }
 
+    fun updateWallet(wallet: Wallet, name: String, unit: String, iconName: String) {
+        viewModelScope.launch {
+            repository.updateWallet(wallet.copy(name = name, unit = unit, iconName = iconName))
+        }
+    }
+
+    fun hideWallet(wallet: Wallet) {
+        viewModelScope.launch {
+            repository.updateWallet(wallet.copy(isHidden = true))
+        }
+    }
+
     private val walletBalanceFlows = ConcurrentHashMap<Long, StateFlow<Int?>>()
     fun getWalletBalance(walletId: Long): StateFlow<Int?> {
         return walletBalanceFlows.getOrPut(walletId) {
@@ -160,6 +172,12 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     fun addExchangeRate(walletId: Long, requiredEp: Int, rewardedAmount: Int) {
         viewModelScope.launch {
             repository.addExchangeRate(walletId, requiredEp, rewardedAmount)
+        }
+    }
+    
+    fun deleteExchangeRate(rate: com.example.dailyquest0.data.entity.ExchangeRate) {
+        viewModelScope.launch {
+            repository.deleteExchangeRate(rate)
         }
     }
     

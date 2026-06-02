@@ -196,15 +196,14 @@ fun StatsScreen(viewModel: AppViewModel) {
                         }
                     } else {
                         var selectedWalletForHistory by remember { mutableStateOf<com.example.dailyquest0.data.entity.WalletWithTransactions?>(null) }
-                        
-                        androidx.compose.foundation.lazy.LazyColumn(
+                        Column(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(walletsWithTransactions.size) { index ->
-                                val walletWithTx = walletsWithTransactions[index]
-                                val wallet = walletWithTx.wallet
-                                val txs = remember(walletWithTx.transactions) { walletWithTx.transactions.sortedByDescending { it.createdAt } }
+                            walletsWithTransactions.forEach { walletWithTx ->
+                                key(walletWithTx.wallet.id) {
+                                    val wallet = walletWithTx.wallet
+                                    val txs = remember(walletWithTx.transactions) { walletWithTx.transactions.sortedByDescending { it.createdAt } }
                                 
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -276,7 +275,7 @@ fun StatsScreen(viewModel: AppViewModel) {
                                 }
                             }
                         }
-                        
+                        }
                         selectedWalletForHistory?.let { walletWithTx ->
                             val wallet = walletWithTx.wallet
                             val allTxs = remember(walletWithTx.transactions) { walletWithTx.transactions.sortedByDescending { it.createdAt } }

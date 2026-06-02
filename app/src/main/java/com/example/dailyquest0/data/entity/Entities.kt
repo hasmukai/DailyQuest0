@@ -44,7 +44,8 @@ data class Wallet(
     val id: Long = 0,
     val name: String,
     val unit: String,
-    val iconName: String = "AttachMoney"
+    val iconName: String = "AttachMoney",
+    val isHidden: Boolean = false
 )
 
 @Entity(

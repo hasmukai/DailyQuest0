@@ -22,6 +22,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.filled.MoreVert
 import com.example.dailyquest0.data.entity.ExchangeRate
 import com.example.dailyquest0.data.entity.Wallet
 import com.example.dailyquest0.ui.viewmodel.AppViewModel
@@ -163,6 +166,10 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
 
     var showConsumeDialog by remember { mutableStateOf(false) }
     var showAddRateDialog by remember { mutableStateOf(false) }
+    var showEditWalletDialog by remember { mutableStateOf(false) }
+    var showHideWalletDialog by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
+    var rateToDelete by remember { mutableStateOf<com.example.dailyquest0.data.entity.ExchangeRate?>(null) }
 
     Card(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)),
@@ -177,9 +184,33 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(wallet.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text("Balance: ${balance ?: 0} ${wallet.unit}", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                Box {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            onClick = {
+                                menuExpanded = false
+                                showEditWalletDialog = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Hide") },
+                            onClick = {
+                                menuExpanded = false
+                                showHideWalletDialog = true
+                            }
+                        )
+                    }
                 }
             }
             
@@ -200,19 +231,35 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             for (rate in rowRates) {
-                                Button(
-                                    onClick = { viewModel.exchangeEp(rate) },
-                                    enabled = (userStats?.currentEp ?: 0) >= rate.requiredEp,
-                                    modifier = Modifier.weight(1f).height(64.dp),
-                                    contentPadding = PaddingValues(4.dp),
+                                @OptIn(ExperimentalFoundationApi::class)
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(64.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .combinedClickable(
+                                            onClick = {
+                                                if ((userStats?.currentEp ?: 0) >= rate.requiredEp) {
+                                                    viewModel.exchangeEp(rate)
+                                                }
+                                            },
+                                            onLongClick = {
+                                                rateToDelete = rate
+                                            }
+                                        ),
+                                    color = if ((userStats?.currentEp ?: 0) >= rate.requiredEp) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = if ((userStats?.currentEp ?: 0) >= rate.requiredEp) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
-                                    Text(
-                                        text = "-${rate.requiredEp}EP\n➔+${rate.rewardedAmount}${wallet.unit}",
-                                        fontSize = 12.sp,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                        lineHeight = 16.sp
-                                    )
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
+                                        Text(
+                                            text = "-${rate.requiredEp}EP\n➔+${rate.rewardedAmount}${wallet.unit}",
+                                            fontSize = 12.sp,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            lineHeight = 16.sp,
+                                            color = if ((userStats?.currentEp ?: 0) >= rate.requiredEp) MaterialTheme.colorScheme.onPrimary else Color.Gray
+                                        )
+                                    }
                                 }
                             }
                             val emptySlots = 3 - rowRates.size
@@ -362,6 +409,123 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showConsumeDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showEditWalletDialog) {
+        var name by remember { mutableStateOf(wallet.name) }
+        var unit by remember { mutableStateOf(wallet.unit) }
+        var selectedIcon by remember { mutableStateOf(wallet.iconName) }
+        var nameError by remember { mutableStateOf<String?>(null) }
+        var unitError by remember { mutableStateOf<String?>(null) }
+
+        AlertDialog(
+            onDismissRequest = { showEditWalletDialog = false },
+            title = { Text("Edit Wallet") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { 
+                            name = it
+                            if (nameError != null) nameError = null
+                        },
+                        label = { Text("Wallet Name") },
+                        singleLine = true,
+                        isError = nameError != null,
+                        supportingText = nameError?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                    )
+                    OutlinedTextField(
+                        value = unit,
+                        onValueChange = { 
+                            unit = it
+                            if (unitError != null) unitError = null
+                        },
+                        label = { Text("Unit") },
+                        singleLine = true,
+                        isError = unitError != null,
+                        supportingText = unitError?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Icon", style = MaterialTheme.typography.labelMedium)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(QuestIcon.values().size) { index ->
+                            val iconItem = QuestIcon.values()[index]
+                            val isSelected = selectedIcon == iconItem.iconName
+                            IconButton(
+                                onClick = { selectedIcon = iconItem.iconName },
+                                modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = if (isSelected) iconItem.filledIcon else iconItem.outlinedIcon,
+                                    contentDescription = iconItem.iconName,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    var isValid = true
+                    if (name.isBlank()) { nameError = "名前を入力してください"; isValid = false }
+                    if (unit.isBlank()) { unitError = "単位を入力してください"; isValid = false }
+                    if (isValid) {
+                        viewModel.updateWallet(wallet, name, unit, selectedIcon)
+                        showEditWalletDialog = false
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditWalletDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showHideWalletDialog) {
+        AlertDialog(
+            onDismissRequest = { showHideWalletDialog = false },
+            title = { Text("Hide Wallet") },
+            text = { Text("このWalletを非表示にしますか？\n(履歴等のデータは保持されます)") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.hideWallet(wallet)
+                        showHideWalletDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Hide") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showHideWalletDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+    
+    rateToDelete?.let { rate ->
+        AlertDialog(
+            onDismissRequest = { rateToDelete = null },
+            title = { Text("Delete Exchange Rate") },
+            text = { Text("この交換レートを削除しますか？\n(-${rate.requiredEp}EP ➔ +${rate.rewardedAmount}${wallet.unit})") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteExchangeRate(rate)
+                        rateToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { rateToDelete = null }) { Text("Cancel") }
             }
         )
     }

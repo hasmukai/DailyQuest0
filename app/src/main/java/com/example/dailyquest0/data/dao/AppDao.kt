@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.room.Delete
 import com.example.dailyquest0.data.entity.DailyQuestLog
 import com.example.dailyquest0.data.entity.ExchangeRate
 import com.example.dailyquest0.data.entity.Quest
@@ -64,11 +65,14 @@ interface AppDao {
     suspend fun deleteAllLogsForQuest(questId: Long): Int
 
     // --- Wallet ---
-    @Query("SELECT * FROM wallets")
+    @Query("SELECT * FROM wallets WHERE isHidden = 0")
     fun getAllWallets(): Flow<List<Wallet>>
 
     @Insert
     suspend fun insertWallet(wallet: Wallet): Long
+
+    @Update
+    suspend fun updateWallet(wallet: Wallet): Int
 
     // --- ExchangeRate ---
     @Query("SELECT * FROM exchange_rates WHERE walletId = :walletId ORDER BY requiredEp ASC")
@@ -77,12 +81,15 @@ interface AppDao {
     @Insert
     suspend fun insertExchangeRate(rate: ExchangeRate): Long
 
+    @Delete
+    suspend fun deleteExchangeRate(rate: ExchangeRate): Int
+
     // --- WalletTransaction ---
     @Query("SELECT * FROM wallet_transactions WHERE walletId = :walletId ORDER BY createdAt DESC")
     fun getTransactionsForWallet(walletId: Long): Flow<List<WalletTransaction>>
     
     @Transaction
-    @Query("SELECT * FROM wallets")
+    @Query("SELECT * FROM wallets WHERE isHidden = 0")
     fun getWalletsWithTransactions(): Flow<List<com.example.dailyquest0.data.entity.WalletWithTransactions>>
     
     @Query("SELECT SUM(amount) FROM wallet_transactions WHERE walletId = :walletId")

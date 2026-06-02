@@ -119,6 +119,10 @@ class AppRepository(private val appDao: AppDao) {
         appDao.insertWallet(Wallet(name = name, unit = unit, iconName = iconName))
     }
 
+    suspend fun updateWallet(wallet: Wallet) {
+        appDao.updateWallet(wallet)
+    }
+
     fun getExchangeRatesForWallet(walletId: Long): Flow<List<ExchangeRate>> {
         return appDao.getExchangeRatesForWallet(walletId)
     }
@@ -129,6 +133,10 @@ class AppRepository(private val appDao: AppDao) {
             requiredEp = requiredEp,
             rewardedAmount = rewardedAmount
         ))
+    }
+
+    suspend fun deleteExchangeRate(rate: ExchangeRate) {
+        appDao.deleteExchangeRate(rate)
     }
 
     fun getTransactionsForWallet(walletId: Long): Flow<List<WalletTransaction>> {
