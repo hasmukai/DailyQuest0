@@ -168,11 +168,17 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
     var showAddRateDialog by remember { mutableStateOf(false) }
     var showEditWalletDialog by remember { mutableStateOf(false) }
     var showHideWalletDialog by remember { mutableStateOf(false) }
-    var menuExpanded by remember { mutableStateOf(false) }
     var rateToDelete by remember { mutableStateOf<com.example.dailyquest0.data.entity.ExchangeRate?>(null) }
 
+    @OptIn(ExperimentalFoundationApi::class)
     Card(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { showEditWalletDialog = true }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -187,30 +193,6 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(wallet.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text("Balance: ${balance ?: 0} ${wallet.unit}", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                }
-                Box {
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
-                    }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit") },
-                            onClick = {
-                                menuExpanded = false
-                                showEditWalletDialog = true
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Hide") },
-                            onClick = {
-                                menuExpanded = false
-                                showHideWalletDialog = true
-                            }
-                        )
-                    }
                 }
             }
             
@@ -485,7 +467,15 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { showEditWalletDialog = false }) { Text("Cancel") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { 
+                        showEditWalletDialog = false
+                        showHideWalletDialog = true 
+                    }) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                    TextButton(onClick = { showEditWalletDialog = false }) { Text("Cancel") }
+                }
             }
         )
     }
