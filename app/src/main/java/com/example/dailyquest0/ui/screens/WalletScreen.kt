@@ -235,7 +235,7 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                                 ) {
                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
                                         Text(
-                                            text = "-${rate.requiredEp}EP\n➔+${rate.rewardedAmount}${wallet.unit}",
+                                            text = "-${rate.requiredEp}EP\n↓\n+${rate.rewardedAmount}${wallet.unit}",
                                             fontSize = 12.sp,
                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                             lineHeight = 16.sp,
