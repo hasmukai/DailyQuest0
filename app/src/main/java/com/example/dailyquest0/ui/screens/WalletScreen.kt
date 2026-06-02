@@ -194,6 +194,13 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
                     Text(wallet.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text("Balance: ${balance ?: 0} ${wallet.unit}", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
+                Button(
+                    onClick = { showConsumeDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                ) {
+                    Text("Consume", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -257,18 +264,10 @@ fun WalletItem(wallet: Wallet, viewModel: AppViewModel) {
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.Start
             ) {
                 OutlinedButton(onClick = { showAddRateDialog = true }) {
                     Text("Add Rate")
-                }
-                Button(
-                    onClick = { showConsumeDialog = true },
-                    modifier = Modifier.height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Text("Consume", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
