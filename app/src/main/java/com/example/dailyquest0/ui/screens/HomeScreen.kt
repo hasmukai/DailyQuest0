@@ -179,12 +179,12 @@ fun HomeScreen(viewModel: AppViewModel) {
                 )
             }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding(), bottom = 0.dp)
+                    .padding(horizontal = 16.dp)
+            ) {
 
             val filterOptions = listOf("All") + QuestType.values().map { it.displayName }
             CustomSegmentedControl(

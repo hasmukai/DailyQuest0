@@ -53,7 +53,7 @@ fun StatsScreen(viewModel: AppViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding(), bottom = 0.dp)
         ) {
             TabRow(selectedTabIndex = selectedTabIndex) {
                 tabs.forEachIndexed { index, title ->

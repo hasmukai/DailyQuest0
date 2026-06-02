@@ -1,5 +1,6 @@
 package com.example.dailyquest0.ui.navigation
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -54,7 +55,9 @@ fun AppNavigation(viewModel: AppViewModel) {
     ) { innerPadding ->
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
         ) { page ->
             when (page) {
                 0 -> HomeScreen(viewModel = viewModel)

@@ -59,7 +59,7 @@ fun WalletScreen(viewModel: AppViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding(), bottom = 0.dp)
                 .padding(horizontal = 16.dp)
         ) {
             if (wallets.isEmpty()) {
