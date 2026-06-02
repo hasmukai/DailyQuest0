@@ -106,7 +106,7 @@ class AppRepository(private val appDao: AppDao) {
             } else if (quest.type == com.example.dailyquest0.data.entity.QuestType.TEMPORARY.displayName) {
                 appDao.deleteAllLogsForQuest(quest.id)
             }
-            appDao.spendEp(quest.epReward) // revert EP
+            appDao.revertEarnedEp(quest.epReward) // revert EP
         }
         updateEpSnapshot()
         evaluatePerfectDay()
